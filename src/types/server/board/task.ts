@@ -7,8 +7,8 @@ type TaskType = {
   timeupdated: number;
   updatedby: string;
   listorder: string;
-  lastchecked: string;
-  lastcheckedby: string;
+  lastchecked?: string;
+  lastcheckedby?: string;
 };
 
 export default TaskType;

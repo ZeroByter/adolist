@@ -2,7 +2,7 @@ type UserType = {
   id: string;
   username: string;
   password: boolean;
-  email: number;
+  email?: number;
   timecreated: number;
 };
 

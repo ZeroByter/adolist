@@ -30,6 +30,9 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
         timecreated: 0,
         timeupdated: 0,
         updatedby: "",
+        listorder: "0",
+        lastchecked: undefined,
+        lastcheckedby: undefined,
       });
       setForcedData(newForcedData);
     } else {
@@ -195,6 +198,7 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
           onKeyDown={onKeyDown}
           onChange={onTextChange}
           onBlur={onBlur}
+          tabIndex={data == null ? -1 : undefined}
         />
       </div>
     </div>
