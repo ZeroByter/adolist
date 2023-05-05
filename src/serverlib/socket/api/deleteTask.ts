@@ -22,9 +22,10 @@ const SocketDeleteTask = async (
   if (!checkBoardAccess(user.id, task.ownerid)) return;
 
   await TasksSQL.delete(data.id);
+  await TasksSQL.decreaseTaskListOrders(task.ownerid, parseInt(task.listorder))
+  const newTasks = await TasksSQL.getByOwnerId(task.ownerid);
 
-  const result = await TasksSQL.getByOwnerId(task.ownerid);
-  io.to(task.ownerid).emit("setTasks", task.ownerid, result);
+  io.to(task.ownerid).emit("setTasks", task.ownerid, newTasks);
 };
 
 export default SocketDeleteTask;

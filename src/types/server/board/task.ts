@@ -6,6 +6,9 @@ type TaskType = {
   timecreated: number;
   timeupdated: number;
   updatedby: string;
+  listorder: string;
+  lastchecked: string;
+  lastcheckedby: string;
 };
 
 export default TaskType;

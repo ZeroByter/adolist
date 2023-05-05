@@ -22,7 +22,7 @@ export default class TasksSQL {
       [ownerid]
     )) as any;
 
-    return data;
+    return data as TaskType[];
   }
 
   static async getLast(ownerid: string) {
@@ -131,5 +131,8 @@ export default class TasksSQL {
     });
 
     return newId;
+  }
+  static async decreaseTaskListOrders(ownerid: string, listorder: number) {
+    await psqlQuery("UPDATE tasks SET listorder = listorder -1 WHERE ownerid =$1 AND listorder > $2", [ownerid, listorder])
   }
 }

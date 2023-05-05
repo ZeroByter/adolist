@@ -66,4 +66,10 @@ export default class BoardsSQL {
 
     return newId;
   }
+
+  static async decreaseBoardListOrders(ownerid: string, listorder: number) {
+    await psqlQuery("UPDATE boards SET listorder = listorder -1 WHERE ownerid =$1 AND listorder > $2", [ownerid, listorder])
+  }
+
 }
+
