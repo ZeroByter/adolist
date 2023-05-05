@@ -15,11 +15,12 @@ const SocketDeleteBoard = async (
   const user = await UsersSQL.getById(session.id);
   if (!user) return;
 
-  const board = BoardsSQL.getById(boardId);
+  const board = await BoardsSQL.getById(boardId);
   if (!board) return;
 
   await BoardsSQL.delete(boardId);
-
+  await BoardsSQL.decreaseBoardListOrders(board.ownerid, parseInt(board.listorder))
+  
   io.to(boardId).emit("deleteBoard", boardId);
 };
 
