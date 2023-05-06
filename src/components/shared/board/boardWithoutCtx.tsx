@@ -6,6 +6,10 @@ import {
   Grid,
   IconButton,
   TextareaAutosize,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
 } from "@mui/material";
 import { ChangeEvent, FC, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
@@ -109,6 +113,8 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
     );
   };
 
+  const hasCheckedItem = useData?.tasks.find((task) => task.checked) != null;
+
   return (
     <>
       <form className={css.root} onSubmit={onSubmit}>
@@ -125,7 +131,29 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
               {renderOwnerButtons()}
             </div>
             <div>
-              {useData && <List data={useData} boardId={useData?.id} />}
+              {useData && (
+                <>
+                  <List
+                    type="ONLY_INCOMPLETE"
+                    data={useData}
+                    boardId={useData?.id}
+                  />
+                  {hasCheckedItem && (
+                    <Accordion disableGutters square>
+                      <AccordionSummary>
+                        <Typography>Completed tasks</Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <List
+                          type="ONLY_COMPLETE"
+                          data={useData}
+                          boardId={useData?.id}
+                        />
+                      </AccordionDetails>
+                    </Accordion>
+                  )}
+                </>
+              )}
             </div>
           </CardContent>
           {createBoard && (

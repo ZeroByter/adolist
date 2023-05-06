@@ -4,6 +4,7 @@ type IndexProps = {
   id?: string;
   username?: string;
   boards?: BoardType[];
+  focusedTask?: string;
 };
 
 export default IndexProps;

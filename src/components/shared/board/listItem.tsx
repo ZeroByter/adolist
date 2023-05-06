@@ -1,4 +1,11 @@
-import { ChangeEvent, KeyboardEvent, FC, FocusEvent } from "react";
+import {
+  ChangeEvent,
+  KeyboardEvent,
+  FC,
+  FocusEvent,
+  useRef,
+  useEffect,
+} from "react";
 import css from "./listItem.module.scss";
 import { Box, Checkbox, TextareaAutosize } from "@mui/material";
 import TaskType from "@/types/client/board/task";
@@ -15,23 +22,41 @@ type Props = {
 };
 
 const ListItem: FC<Props> = ({ data, boardId }) => {
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
   const { props, setProps }: IndexPropsType = useSSRFetcher();
   const { socket } = useSocket();
   const { createBoard, forcedData, setForcedData } = useBoard();
 
+  useEffect(() => {
+    if (data && props.focusedTask == data?.id) {
+      inputRef.current?.focus();
+    }
+  }, [data, data?.id, props.focusedTask]);
+
   const createNewTask = () => {
     if (createBoard) {
       const newForcedData = { ...forcedData };
+
+      const newId = randomId();
       newForcedData.tasks.push({
-        id: randomId(),
+        id: newId,
         ownerid: "",
         checked: false,
         text: "",
         timecreated: 0,
         timeupdated: 0,
         updatedby: "",
+        listorder: "0",
+        lastchecked: undefined,
+        lastcheckedby: undefined,
       });
+
       setForcedData(newForcedData);
+
+      const newProps = { ...props };
+      newProps.focusedTask = newId;
+      setProps(newProps);
     } else {
       if (!props.boards) return;
 
@@ -95,6 +120,28 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
 
     if (e.key == "Backspace" && data?.text == "") {
       deleteTask();
+
+      //auto focus previous task
+      const newProps = { ...props };
+      if (createBoard) {
+        if (forcedData.tasks.length > 1) {
+          newProps.focusedTask =
+            forcedData.tasks[forcedData.tasks.length - 2].id;
+          setProps(newProps);
+        }
+      } else {
+        const foundBoard = newProps.boards?.find(
+          (board) => board.id == boardId
+        );
+        if (!foundBoard) return;
+
+        if (foundBoard.tasks.length > 0) {
+          newProps.focusedTask =
+            foundBoard.tasks[foundBoard.tasks.length - 1].id;
+          setProps(newProps);
+        }
+      }
+
       e.preventDefault();
     }
   };
@@ -186,15 +233,17 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
       <div className={css.sideItem}>{renderSideItem()}</div>
       <div className={css.text}>
         <TextareaAutosize
-          autoFocus={
-            data != null && (data.ownerid == "" || data.updatedby == props.id)
-          }
+          // autoFocus={
+          //   data != null && (data.ownerid == "" || data.updatedby == props.id)
+          // }
+          ref={inputRef}
           required={data != null}
           placeholder="An awesome task"
           value={data?.text}
           onKeyDown={onKeyDown}
           onChange={onTextChange}
           onBlur={onBlur}
+          tabIndex={data == null ? -1 : undefined}
         />
       </div>
     </div>

@@ -11,6 +11,7 @@ import { Server, Socket } from "socket.io";
 
 const SocketCreateTask = async (
   io: Server<SocketEmitEvents, SocketListenEvents>,
+  socket: Socket<SocketEmitEvents, SocketListenEvents>,
   data: CreateTaskData
 ) => {
   const session = decryptAccountToken(data.auth);
@@ -21,10 +22,15 @@ const SocketCreateTask = async (
 
   const lastTaskListOrder = (await TasksSQL.getLast(data.boardId)) ?? "-1";
 
-  await TasksSQL.create(data.boardId, user.id, parseInt(lastTaskListOrder) + 1);
+  const newId = await TasksSQL.create(
+    data.boardId,
+    user.id,
+    parseInt(lastTaskListOrder) + 1
+  );
 
   const result = await TasksSQL.getByOwnerId(data.boardId);
   io.to(data.boardId).emit("setTasks", data.boardId, result);
+  socket.emit("setFocusedTask", newId);
 };
 
 export default SocketCreateTask;

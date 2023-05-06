@@ -24,7 +24,7 @@ const SocketAddListeners = (
 
       socket.on("setAccount", (data) => SocketSetAccount(socket, data));
       socket.on("createBoard", (data) => SocketCreateBoard(socket, data));
-      socket.on("createTask", (data) => SocketCreateTask(io, data));
+      socket.on("createTask", (data) => SocketCreateTask(io, socket, data));
 
       socket.on("shareBoardWithUser", (auth, boardId, userId) =>
         SocketShareBoardWithUser(io, socket, auth, boardId, userId)

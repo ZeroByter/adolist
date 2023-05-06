@@ -2,12 +2,13 @@ import BoardType from "@/types/client/board/board";
 import { createContext, useContext, FC, ReactNode, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 
-export const getDefaultData = () => ({
+export const getDefaultData = (): BoardType => ({
   id: "",
   ownerid: "",
   name: "",
   timecreated: 0,
   timeupdated: 0,
+  listorder: "0",
   tasks: [],
   shares: [],
 });
