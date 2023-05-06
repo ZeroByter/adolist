@@ -88,6 +88,14 @@ const createListeners = (
       setProps(newProps);
     });
 
+    socket.on("setFocusedTask", (taskId) => {
+      const newProps = { ...props };
+
+      newProps.focusedTask = taskId;
+
+      setProps(newProps);
+    });
+
     return () => {
       socket.off("setBoards");
       socket.off("setBoardName");
@@ -97,6 +105,7 @@ const createListeners = (
       socket.off("setTasks");
       socket.off("setTaskText");
       socket.off("setTaskChecked");
+      socket.off("setFocusedTask");
     };
   };
 };

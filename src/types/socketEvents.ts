@@ -42,4 +42,5 @@ export interface SocketListenEvents {
   setTasks: (boardId: string, tasks: TaskType[]) => void;
   setTaskText: (boardId: string, id: string, text: string) => void;
   setTaskChecked: (boardId: string, id: string, checked: boolean) => void;
+  setFocusedTask: (taskId: string) => void;
 }

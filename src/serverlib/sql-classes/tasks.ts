@@ -120,7 +120,7 @@ export default class TasksSQL {
     const newId = randomId();
 
     await psqlInsert("tasks", {
-      id: randomId(),
+      id: newId,
       ownerid,
       text: "",
       checked: false,
@@ -133,6 +133,9 @@ export default class TasksSQL {
     return newId;
   }
   static async decreaseTaskListOrders(ownerid: string, listorder: number) {
-    await psqlQuery("UPDATE tasks SET listorder = listorder -1 WHERE ownerid =$1 AND listorder > $2", [ownerid, listorder])
+    await psqlQuery(
+      "UPDATE tasks SET listorder = listorder -1 WHERE ownerid =$1 AND listorder > $2",
+      [ownerid, listorder]
+    );
   }
 }
