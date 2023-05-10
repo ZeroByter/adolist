@@ -59,7 +59,7 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
   const onNameChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (isUsingForcedData) {
       const newForcedData = { ...forcedData };
-      newForcedData.name = e.target.value;
+      newForcedData.board.name = e.target.value;
       setForcedData(newForcedData);
     } else {
       const newProps = { ...props };
@@ -92,7 +92,7 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
   const useData = isUsingForcedData ? forcedData : data;
 
   const renderOwnerButtons = () => {
-    if (useData != null && useData.ownerid != props.id) {
+    if (useData != null && useData.board.ownerid != props.id) {
       return null;
     }
 
@@ -133,22 +133,14 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
             <div>
               {useData && (
                 <>
-                  <List
-                    type="ONLY_INCOMPLETE"
-                    data={useData}
-                    boardId={useData?.id}
-                  />
+                  <List type="ONLY_INCOMPLETE" data={useData} />
                   {hasCheckedItem && (
                     <Accordion disableGutters square>
                       <AccordionSummary>
                         <Typography>Completed tasks</Typography>
                       </AccordionSummary>
                       <AccordionDetails>
-                        <List
-                          type="ONLY_COMPLETE"
-                          data={useData}
-                          boardId={useData?.id}
-                        />
+                        <List type="ONLY_COMPLETE" data={useData} />
                       </AccordionDetails>
                     </Accordion>
                   )}
