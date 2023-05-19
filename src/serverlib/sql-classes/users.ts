@@ -13,7 +13,7 @@ export default class UsersSQL {
 
   static async getByUsername(username: string) {
     const data = (await psqlQuery(
-      "SELECT * FROM users WHERE LOWER(username)=LOWER($1)",
+      "SELECT * FROM users WHERE TRIM(BOTH ' ' FROM LOWER(username))=TRIM(BOTH ' ' FROM LOWER($1))",
       [username]
     )) as any;
 
@@ -22,7 +22,7 @@ export default class UsersSQL {
 
   static async getByUsernameAndPassword(username: string, password: string) {
     const data = (await psqlQuery(
-      `SELECT * FROM users WHERE LOWER("username")=LOWER($1) AND "password"=(SUBSTRING("password"::TEXT FROM 0 FOR 65) || encode(sha256(SUBSTRING("password"::BYTEA FROM 0 FOR 65) || $2), 'hex'));`,
+      `SELECT * FROM users WHERE TRIM(BOTH ' ' FROM LOWER("username"))=TRIM(BOTH ' ' FROM LOWER($1)) AND "password"=(SUBSTRING("password"::TEXT FROM 0 FOR 65) || encode(sha256(SUBSTRING("password"::BYTEA FROM 0 FOR 65) || $2), 'hex'));`,
       [username, password]
     )) as any;
 
