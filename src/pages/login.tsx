@@ -20,9 +20,13 @@ type FormData = {
 
 const LoginPage = () => {
   const { socket } = useSocket();
-  const { control, handleSubmit } = useForm<FormData>();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>();
 
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
 
   const onSubmit = handleSubmit(async (data) => {
     if (!socket) {
@@ -39,7 +43,7 @@ const LoginPage = () => {
 
         Router.push("/");
       } else {
-        setError(response.error);
+        setServerError(response.error);
       }
     });
 
@@ -55,7 +59,13 @@ const LoginPage = () => {
             <Controller
               name="username"
               control={control}
-              rules={{ required: true }}
+              rules={{
+                required: true,
+                pattern: {
+                  value: /^[^\s]+(?:$|.*[^\s]+$)/g,
+                  message: "Username can't end or start with spaces",
+                },
+              }}
               render={({ field }) => (
                 <TextField required type="text" label="Username" {...field} />
               )}
@@ -76,9 +86,11 @@ const LoginPage = () => {
               )}
             />
           </FormControl>
-          {error && (
+          {(serverError || errors.username?.message) && (
             <FormControl fullWidth margin="normal">
-              <Alert severity="error">{error}</Alert>
+              <Alert severity="error">
+                {serverError || errors.username?.message}
+              </Alert>
             </FormControl>
           )}
           <FormControl fullWidth margin="normal">
