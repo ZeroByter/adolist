@@ -7,10 +7,11 @@ import { FC } from "react";
 type Props = {
   open: boolean;
   onClose: () => void;
-  board: BoardType;
+  boardId: string;
+  boardName: string;
 };
 
-const DeleteModal: FC<Props> = ({ open, onClose, board }) => {
+const DeleteModal: FC<Props> = ({ open, onClose, boardId, boardName }) => {
   const { socket } = useSocket();
 
   const onDelete = async () => {
@@ -18,7 +19,7 @@ const DeleteModal: FC<Props> = ({ open, onClose, board }) => {
 
     onClose();
 
-    socket.emit("deleteBoard", getAuthCookie(), board.id);
+    socket.emit("deleteBoard", getAuthCookie(), boardId);
   };
 
   const onCancel = async () => {
@@ -35,7 +36,7 @@ const DeleteModal: FC<Props> = ({ open, onClose, board }) => {
       maxWidth="sm"
       fullWidth={true}
     >
-      <DialogTitle>Delete board {`'${board.name}'`}?</DialogTitle>
+      <DialogTitle>Delete board {`'${boardName}'`}?</DialogTitle>
       <DialogActions>
         <Button onClick={onCancel} autoFocus>
           No

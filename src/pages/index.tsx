@@ -27,9 +27,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   let id: string | null = null;
   let username: string | null = null;
 
-  let boards: { [id: string]: BoardType } | undefined = undefined;
-  let tasks: { [id: string]: TaskType } | undefined = undefined;
-  let boardShares: { [id: string]: UserType } | undefined = undefined;
+  let boards: { [id: string]: BoardType } | null = null;
+  let tasks: { [id: string]: TaskType } | null = null;
+  let boardShares: { [id: string]: UserType } | null = null;
 
   if (session?.id != null) {
     const account = await UsersSQL.getById(session.id);
@@ -37,21 +37,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     id = account.id;
     username = account.username;
 
-    const [rawBoards, rawTasks, rawShares] = await getBoardsForClient(
-      session.id
-    );
+    const { boardsResult, tasksResult, sharesResult } =
+      await getBoardsForClient(session.id);
 
     boards = {};
-    for (const board of rawBoards) {
-      boards[board.id] = board as BoardType;
+    for (const board of boardsResult) {
+      boards[board.id] = board;
     }
     tasks = {};
-    for (const task of rawTasks) {
-      tasks[task.id] = task as TaskType;
+    for (const task of tasksResult) {
+      tasks[task.id] = task;
     }
     boardShares = {};
-    for (const share of rawShares) {
-      boardShares[share.id] = share as UserType;
+    for (const share of sharesResult) {
+      boardShares[share.id] = share;
     }
   }
 

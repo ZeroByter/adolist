@@ -1,10 +1,9 @@
 import BoardType from "@/types/client/board/board";
-import TaskType from "@/types/client/board/task";
-import UserType from "@/types/client/board/user";
+import CreateBoardType from "@/types/client/board/createBoard";
 import { createContext, useContext, FC, ReactNode, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 
-export const getDefaultData = (): BoardType => ({
+export const getDefaultData = (): CreateBoardType => ({
   id: "",
   ownerid: "",
   name: "",
@@ -22,10 +21,8 @@ type FormData = {
 type ContextType = {
   createBoard: boolean;
 
-  boardId: string;
-
-  forcedData: BoardType;
-  setForcedData: (newData: BoardType) => void;
+  forcedData: CreateBoardType;
+  setForcedData: (newData: CreateBoardType) => void;
 
   formData: UseFormReturn<FormData, any>;
 };
@@ -34,22 +31,22 @@ export const BoardContext = createContext<ContextType>({} as ContextType);
 
 type Props = {
   children: ReactNode;
-  boardId: string;
   createBoard: boolean;
 };
 
 const BoardContextProvider: FC<Props> = ({
   children,
-  boardId,
   createBoard,
 }) => {
   const formData = useForm<FormData>();
 
-  const [forcedData, setForcedData] = useState<BoardType>(getDefaultData());
+  const [forcedData, setForcedData] = useState<CreateBoardType>(
+    getDefaultData()
+  );
 
   return (
     <BoardContext.Provider
-      value={{ createBoard, boardId, forcedData, setForcedData, formData }}
+      value={{ createBoard, forcedData, setForcedData, formData }}
     >
       {children}
     </BoardContext.Provider>

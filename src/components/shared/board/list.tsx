@@ -1,19 +1,17 @@
 import { FC } from "react";
 import ListItem from "./listItem";
 import css from "./list.module.scss";
-import { useBoard } from "@/components/contexts/board";
 import TaskType from "@/types/client/board/task";
 
 type ListType = "ONLY_INCOMPLETE" | "ONLY_COMPLETE";
 
 type Props = {
+  boardId: string;
   tasks: TaskType[];
   type: ListType;
 };
 
-const List: FC<Props> = ({ tasks, type }) => {
-  const { boardId } = useBoard();
-
+const List: FC<Props> = ({ boardId, tasks, type }) => {
   const renderItems = tasks.map((task) => {
     if (
       (type == "ONLY_COMPLETE" && !task.checked) ||

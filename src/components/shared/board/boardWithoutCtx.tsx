@@ -24,6 +24,8 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ShareModal from "./shareModal";
 import DeleteModal from "./deleteModal";
+import TaskType from "@/types/client/board/task";
+import UserType from "@/types/client/board/user";
 
 export type Props = {
   data?: BoardType;
@@ -59,17 +61,14 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
   const onNameChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (isUsingForcedData) {
       const newForcedData = { ...forcedData };
-      newForcedData.board.name = e.target.value;
+      newForcedData.name = e.target.value;
       setForcedData(newForcedData);
     } else {
       const newProps = { ...props };
 
       if (!newProps.boards) return;
 
-      const foundBoard = newProps.boards.find((board) => board.id === data!.id);
-      if (!foundBoard) return;
-
-      foundBoard.name = e.target.value;
+      newProps.boards[data!.id].name = e.target.value;
 
       setProps(newProps);
 
@@ -92,7 +91,7 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
   const useData = isUsingForcedData ? forcedData : data;
 
   const renderOwnerButtons = () => {
-    if (useData != null && useData.board.ownerid != props.id) {
+    if (useData != null && useData.ownerid != props.id) {
       return null;
     }
 
@@ -113,7 +112,28 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
     );
   };
 
-  const hasCheckedItem = useData?.tasks.find((task) => task.checked) != null;
+  let hasCheckedItem = false;
+  let boardTasks: TaskType[] = [];
+  let boardShares: UserType[] = [];
+
+  if (isUsingForcedData) {
+    hasCheckedItem = forcedData.tasks.find((task) => task.checked) != null;
+    boardTasks = forcedData.tasks;
+  } else {
+    if (props.tasks && props.boardShares) {
+      for (const taskId of data!.tasks) {
+        boardTasks.push(props.tasks[taskId]);
+        if (props.tasks[taskId].checked) {
+          hasCheckedItem = true;
+          break;
+        }
+      }
+
+      for (const shareId of data!.shares) {
+        boardShares.push(props.boardShares[shareId]);
+      }
+    }
+  }
 
   return (
     <>
@@ -133,14 +153,22 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
             <div>
               {useData && (
                 <>
-                  <List type="ONLY_INCOMPLETE" data={useData} />
+                  <List
+                    boardId={useData.id}
+                    type="ONLY_INCOMPLETE"
+                    tasks={boardTasks}
+                  />
                   {hasCheckedItem && (
                     <Accordion disableGutters square>
                       <AccordionSummary>
                         <Typography>Completed tasks</Typography>
                       </AccordionSummary>
                       <AccordionDetails>
-                        <List type="ONLY_COMPLETE" data={useData} />
+                        <List
+                          boardId={useData.id}
+                          type="ONLY_COMPLETE"
+                          tasks={boardTasks}
+                        />
                       </AccordionDetails>
                     </Accordion>
                   )}
@@ -165,12 +193,14 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
       {useData && (
         <>
           <ShareModal
-            board={useData}
+            boardId={useData.id}
+            boardShares={boardShares}
             open={showShareModal}
             onClose={() => setShowShareModal(false)}
           />
           <DeleteModal
-            board={useData}
+            boardId={useData.id}
+            boardName={useData.name}
             open={showDeleteModal}
             onClose={() => setShowDeleteModal(false)}
           />

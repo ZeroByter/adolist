@@ -27,7 +27,7 @@ export const getBoardsForClient = async (userId: string) => {
     sharesResult.push(...shares);
   }
 
-  return [boardsResult, tasksResult, sharesResult];
+  return { boardsResult, tasksResult, sharesResult };
 };
 
 export const checkBoardAccess = async (userId: string, boardId: string) => {
