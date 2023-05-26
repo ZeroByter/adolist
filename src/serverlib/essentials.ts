@@ -1,24 +1,33 @@
 import BoardType from "@/types/client/board/board";
+import TaskType from "@/types/client/board/task";
+import UserType from "@/types/client/board/user";
 import BoardsSQL from "./sql-classes/boards";
 import BoardSharesSQL from "./sql-classes/boardshares";
 import TasksSQL from "./sql-classes/tasks";
 
 export const getBoardsForClient = async (userId: string) => {
-  const result: BoardType[] = [];
+  const boardsResult: BoardType[] = [];
+  const tasksResult: TaskType[] = [];
+  const sharesResult: UserType[] = [];
 
   const boards = [
     ...(await BoardsSQL.getByOwnerId(userId)),
     ...(await BoardSharesSQL.getSharedWithBoards(userId)),
   ];
   for (const board of boards) {
-    result.push({
+    const tasks = await TasksSQL.getByOwnerId(board.id);
+    const shares = await BoardSharesSQL.getUserShares(board.id);
+
+    boardsResult.push({
       ...board,
-      tasks: await TasksSQL.getByOwnerId(board.id),
-      shares: await BoardSharesSQL.getUserShares(board.id),
+      tasks: tasks.map((task) => task.id),
+      shares: shares.map((share) => share.id),
     });
+    tasksResult.push(...tasks);
+    sharesResult.push(...shares);
   }
 
-  return result;
+  return { boardsResult, tasksResult, sharesResult };
 };
 
 export const checkBoardAccess = async (userId: string, boardId: string) => {

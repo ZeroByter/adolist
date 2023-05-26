@@ -1,8 +1,8 @@
-import BoardType from "../client/board/board";
+import CreateBoardType from "../client/board/createBoard";
 
 type CreateBoardData = {
   auth: string;
-  data: BoardType;
+  data: CreateBoardType;
 };
 
 export default CreateBoardData;

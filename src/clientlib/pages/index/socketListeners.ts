@@ -11,10 +11,23 @@ const createListeners = (
   return () => {
     if (!socket) return;
 
-    socket.on("setBoards", (boards) => {
+    socket.on("setBoards", (boards, tasks, shares) => {
       const newProps = { ...props };
 
-      newProps.boards = boards;
+      if (!newProps.boards || !newProps.tasks || !newProps.boardShares) return;
+
+      for (const task of tasks) {
+        newProps.tasks[task.id] = task;
+      }
+
+      for (const user of shares) {
+        newProps.boardShares[user.id] = user;
+      }
+
+      newProps.boards = {};
+      for (const board of boards) {
+        newProps.boards[board.id] = board;
+      }
 
       setProps(newProps);
     });
@@ -22,10 +35,9 @@ const createListeners = (
     socket.on("setBoardName", (id, name) => {
       const newProps = { ...props };
 
-      const foundBoard = newProps.boards?.find((board) => board.id === id);
-      if (!foundBoard) return;
+      if (!newProps.boards) return;
 
-      foundBoard.name = name;
+      newProps.boards[id].name = name;
 
       setProps(newProps);
     });
@@ -33,10 +45,15 @@ const createListeners = (
     socket.on("setBoardSharedUsers", (id, users) => {
       const newProps = { ...props };
 
-      const foundBoard = newProps.boards?.find((board) => board.id === id);
-      if (!foundBoard) return;
+      if (!newProps.boards || !newProps.boardShares) return;
 
-      foundBoard.shares = users;
+      const ids = [];
+      for (const user of users) {
+        ids.push(user.id);
+        newProps.boardShares[user.id] = user;
+      }
+
+      newProps.boards[id].shares = ids;
 
       setProps(newProps);
     });
@@ -44,7 +61,9 @@ const createListeners = (
     socket.on("deleteBoard", (id) => {
       const newProps = { ...props };
 
-      newProps.boards = newProps.boards!.filter((board) => board.id != id);
+      if (!newProps.boards) return;
+
+      delete newProps.boards[id];
 
       setProps(newProps);
     });
@@ -52,10 +71,15 @@ const createListeners = (
     socket.on("setTasks", (boardId, tasks) => {
       const newProps = { ...props };
 
-      const foundBoard = newProps.boards?.find((board) => board.id === boardId);
-      if (!foundBoard) return;
+      if (!newProps.boards || !newProps.tasks) return;
 
-      foundBoard.tasks = tasks;
+      const ids = [];
+      for (const task of tasks) {
+        ids.push(task.id);
+        newProps.tasks[task.id] = task;
+      }
+
+      newProps.boards[boardId].tasks = ids;
 
       setProps(newProps);
     });
@@ -63,13 +87,9 @@ const createListeners = (
     socket.on("setTaskText", (boardId, id, text) => {
       const newProps = { ...props };
 
-      const foundBoard = newProps.boards?.find((board) => board.id === boardId);
-      if (!foundBoard) return;
+      if (!newProps.tasks) return;
 
-      const foundTask = foundBoard.tasks.find((task) => task.id == id);
-      if (!foundTask) return;
-
-      foundTask.text = text;
+      newProps.tasks[id].text = text;
 
       setProps(newProps);
     });
@@ -77,13 +97,9 @@ const createListeners = (
     socket.on("setTaskChecked", (boardId, id, checked) => {
       const newProps = { ...props };
 
-      const foundBoard = newProps.boards?.find((board) => board.id === boardId);
-      if (!foundBoard) return;
+      if (!newProps.tasks) return;
 
-      const foundTask = foundBoard.tasks.find((task) => task.id == id);
-      if (!foundTask) return;
-
-      foundTask.checked = checked;
+      newProps.tasks[id].checked = checked;
 
       setProps(newProps);
     });

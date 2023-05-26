@@ -32,12 +32,14 @@ const SocketShareBoardWithUser = async (
     }
   }
 
-  const userBoards = await getBoardsForClient(userId);
+  const { boardsResult, tasksResult, sharesResult } = await getBoardsForClient(
+    userId
+  );
 
   const userSockets = getUserSockets(userId);
   if (userSockets) {
     for (const userSocket of userSockets) {
-      userSocket.emit("setBoards", userBoards);
+      userSocket.emit("setBoards", boardsResult, tasksResult, sharesResult);
 
       userSocket.join(boardId);
     }
