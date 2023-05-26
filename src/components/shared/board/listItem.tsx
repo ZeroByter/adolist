@@ -169,11 +169,11 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
 
       setProps(newProps);
 
-      // socket?.emit("setTaskText", {
-      //   auth: getAuthCookie(),
-      //   id: data!.id,
-      //   text: e.target.value,
-      // });
+      socket?.emit("setTaskText", {
+        auth: getAuthCookie(),
+        id: data!.id,
+        text: e.target.value,
+      });
     }
   };
 
