@@ -60,12 +60,9 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     } else {
       if (!props.boards) return;
 
-      const foundBoard = props.boards.find((board) => board.id === boardId);
-      if (!foundBoard) return;
-
       socket?.emit("createTask", {
         auth: getAuthCookie(),
-        boardId: foundBoard.id,
+        boardId,
       });
     }
   };
@@ -87,12 +84,9 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     } else {
       const newProps = { ...props };
 
-      if (!newProps.boards) return;
+      if (!newProps.tasks || !data?.id) return;
 
-      const foundBoard = newProps.boards.find((board) => board.id === boardId);
-      if (!foundBoard) return;
-
-      const foundTask = foundBoard.tasks.find((task) => task.id === data?.id);
+      const foundTask = newProps.tasks[data?.id];
       if (!foundTask) return;
 
       foundTask.checked = e.target.checked;
@@ -130,14 +124,13 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
           setProps(newProps);
         }
       } else {
-        const foundBoard = newProps.boards?.find(
-          (board) => board.id == boardId
-        );
+        if (!newProps.boards) return;
+
+        const foundBoard = newProps.boards[boardId];
         if (!foundBoard) return;
 
         if (foundBoard.tasks.length > 0) {
-          newProps.focusedTask =
-            foundBoard.tasks[foundBoard.tasks.length - 1].id;
+          newProps.focusedTask = foundBoard.tasks[foundBoard.tasks.length - 1];
           setProps(newProps);
         }
       }
@@ -157,12 +150,9 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     } else {
       const newProps = { ...props };
 
-      if (!newProps.boards) return;
+      if (!newProps.tasks || !data?.id) return;
 
-      const foundBoard = newProps.boards.find((board) => board.id === boardId);
-      if (!foundBoard) return;
-
-      const foundTask = foundBoard.tasks.find((task) => task.id === data?.id);
+      const foundTask = newProps.tasks[data?.id];
       if (!foundTask) return;
 
       foundTask.text = e.target.value;
@@ -187,14 +177,13 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     } else {
       const newProps = { ...props };
 
-      if (!newProps.boards) return;
+      if (!newProps.boards || !newProps.tasks || !data?.id) return;
 
-      const foundBoard = newProps.boards.find((board) => board.id === boardId);
+      const foundBoard = newProps.boards[boardId];
       if (!foundBoard) return;
 
-      foundBoard.tasks = foundBoard.tasks.filter(
-        (task) => task.id !== data?.id
-      );
+      foundBoard.tasks = foundBoard.tasks.filter((task) => task !== data?.id);
+      delete newProps.tasks[data.id];
 
       setProps(newProps);
 

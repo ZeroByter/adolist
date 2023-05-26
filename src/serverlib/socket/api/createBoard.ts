@@ -7,6 +7,7 @@ import { SocketEmitEvents, SocketListenEvents } from "@/types/socketEvents";
 import { getBoardsForClient } from "@/serverlib/essentials";
 import { Socket } from "socket.io";
 import { getUserSockets } from "../userSocketsMap";
+import BoardType from "@/types/client/board/board";
 
 const SocketCreateBoard = async (
   socket: Socket<SocketEmitEvents, SocketListenEvents>,
@@ -29,9 +30,10 @@ const SocketCreateBoard = async (
 
   const userSockets = getUserSockets(user.id);
   if (userSockets) {
-    const newBoards = await getBoardsForClient(user.id);
+    const { boardsResult, tasksResult, sharesResult } =
+      await getBoardsForClient(user.id);
     for (const userSocket of userSockets) {
-      userSocket.emit("setBoards", newBoards);
+      userSocket.emit("setBoards", boardsResult, tasksResult, sharesResult);
     }
   }
 };

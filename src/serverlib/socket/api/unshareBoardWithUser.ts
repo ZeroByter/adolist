@@ -5,6 +5,7 @@ import { SocketEmitEvents, SocketListenEvents } from "@/types/socketEvents";
 import { Server, Socket } from "socket.io";
 import { checkBoardAccess, getBoardsForClient } from "@/serverlib/essentials";
 import { getUserSockets } from "../userSocketsMap";
+import BoardType from "@/types/client/board/board";
 
 const SocketUnshareBoardWithUser = async (
   io: Server<SocketEmitEvents, SocketListenEvents>,
@@ -29,12 +30,14 @@ const SocketUnshareBoardWithUser = async (
     }
   }
 
-  const userBoards = await getBoardsForClient(userId);
+  const { boardsResult, tasksResult, sharesResult } = await getBoardsForClient(
+    userId
+  );
 
   const userSockets = getUserSockets(userId);
   if (userSockets) {
     for (const userSocket of userSockets) {
-      userSocket.emit("setBoards", userBoards);
+      userSocket.emit("setBoards", boardsResult, tasksResult, sharesResult);
 
       userSocket.leave(boardId);
     }

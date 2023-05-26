@@ -24,10 +24,11 @@ import getAuthCookie from "@/clientlib/getAuthCookie";
 type Props = {
   open: boolean;
   onClose: () => void;
-  board: BoardType;
+  boardId: string;
+  boardShares: UserType[];
 };
 
-const ShareModal: FC<Props> = ({ open, onClose, board }) => {
+const ShareModal: FC<Props> = ({ open, onClose, boardId, boardShares }) => {
   const { socket } = useSocket();
 
   const [search, setSearch] = useState("");
@@ -42,7 +43,7 @@ const ShareModal: FC<Props> = ({ open, onClose, board }) => {
     (async () => {
       const rawResponse = await fetch("/api/shareBoardSearchUsers", {
         body: JSON.stringify({
-          boardId: board.id,
+          boardId: boardId,
           search: debouncedSearch,
         }),
         method: "POST",
@@ -55,7 +56,7 @@ const ShareModal: FC<Props> = ({ open, onClose, board }) => {
         setSearchedUsers([]);
       }
     })();
-  }, [board.id, debouncedSearch]);
+  }, [boardId, debouncedSearch]);
 
   const onAddUser = async (userId: string) => {
     if (socket == null) return;
@@ -63,13 +64,13 @@ const ShareModal: FC<Props> = ({ open, onClose, board }) => {
     setSearch("");
     setSearchedUsers([]);
 
-    socket.emit("shareBoardWithUser", getAuthCookie(), board.id, userId);
+    socket.emit("shareBoardWithUser", getAuthCookie(), boardId, userId);
   };
 
   const onRemoveUser = async (userId: string) => {
     if (socket == null) return;
 
-    socket.emit("unshareBoardWithUser", getAuthCookie(), board.id, userId);
+    socket.emit("unshareBoardWithUser", getAuthCookie(), boardId, userId);
   };
 
   const renderSearchedUsers = searchedUsers.map((user) => {
@@ -91,7 +92,7 @@ const ShareModal: FC<Props> = ({ open, onClose, board }) => {
     );
   });
 
-  const renderSharedUsers = board.shares.map((user) => (
+  const renderSharedUsers = boardShares.map((user) => (
     <ListItem key={user.id} disableGutters disablePadding>
       <ListItemButton
         onClick={() => {

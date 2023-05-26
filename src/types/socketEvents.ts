@@ -34,7 +34,11 @@ export interface SocketEmitEvents {
 export interface SocketListenEvents {
   apiResponse: (data: ApiResponse) => void;
 
-  setBoards: (data: BoardType[]) => void;
+  setBoards: (
+    boards: BoardType[],
+    tasks: TaskType[],
+    shares: UserType[]
+  ) => void;
   deleteBoard: (id: string) => void;
   setBoardName: (id: string, name: string) => void;
   setBoardSharedUsers: (id: string, users: UserType[]) => void;
