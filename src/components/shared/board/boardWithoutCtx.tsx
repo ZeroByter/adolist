@@ -125,7 +125,6 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
         boardTasks.push(props.tasks[taskId]);
         if (props.tasks[taskId].checked) {
           hasCheckedItem = true;
-          break;
         }
       }
 
