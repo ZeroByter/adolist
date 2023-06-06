@@ -16,8 +16,8 @@ import BoardSharesSQL from "@/serverlib/sql-classes/boardshares";
 import { getBoardsForClient } from "@/serverlib/essentials";
 import createListeners from "@/clientlib/pages/index/socketListeners";
 import Link from "next/link";
-import TaskType from "@/types/client/board/task";
 import UserType from "@/types/client/board/user";
+import TaskType from "@/types/client/board/task";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,28 +27,24 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   let id: string | null = null;
   let username: string | null = null;
 
-  let boards: { [id: string]: BoardType } | null = null;
-  let tasks: { [id: string]: TaskType } | null = null;
-  let boardShares: { [id: string]: UserType } | null = null;
+  let boards: { [id: string]: BoardType } = {};
+  let tasks: { [id: string]: TaskType } = {};
+  let boardShares: { [id: string]: UserType } = {};
 
   if (session?.id != null) {
     const account = await UsersSQL.getById(session.id);
 
     id = account.id;
     username = account.username;
-
     const { boardsResult, tasksResult, sharesResult } =
       await getBoardsForClient(session.id);
 
-    boards = {};
     for (const board of boardsResult) {
       boards[board.id] = board;
     }
-    tasks = {};
     for (const task of tasksResult) {
       tasks[task.id] = task;
     }
-    boardShares = {};
     for (const share of sharesResult) {
       boardShares[share.id] = share;
     }
@@ -58,11 +54,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       id,
       username,
+
       boards,
       tasks,
       boardShares,
     },
-  } as { props: IndexProps };
+  };
 };
 
 const Page: NextPage<IndexProps> = () => {
