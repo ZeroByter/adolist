@@ -37,7 +37,7 @@ CREATE TABLE "tasks" (
 	"timeupdated" NUMERIC NOT NULL,
 	"updatedby" VARCHAR(16) NOT NULL,
 	"listorder" NUMERIC NOT NULL,
-	"lastchecked" NUMERIC NOT NULL,
+	"lastchecked" NUMERIC NULL DEFAULT NULL,
 	"lastcheckedby" VARCHAR(16) NULL DEFAULT NULL,
 	PRIMARY KEY ("id"),
 	CONSTRAINT "FK__boards" FOREIGN KEY ("ownerid") REFERENCES "boards" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
