@@ -32,18 +32,27 @@ const NavBar: FC = () => {
   };
 
   const renderButtons = () => {
-    if (!props.id) {
-      return (
-        <Box sx={{ display: { xs: "none", sm: "block" } }}>
-          <Link href="/register">
-            <Button color="inherit">Register</Button>
-          </Link>
-          <Link href="/login">
-            <Button color="inherit">Login</Button>
-          </Link>
-        </Box>
-      );
-    }
+    return (
+      <>
+        {props.id &&
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <Link href="/api/logout">
+              <Button color="inherit">Logout</Button>
+            </Link>
+          </Box>
+        }
+        {!props.id &&
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <Link href="/register">
+              <Button color="inherit">Register</Button>
+            </Link>
+            <Link href="/login">
+              <Button color="inherit">Login</Button>
+            </Link>
+          </Box>
+        }
+      </>
+    )
   };
 
   const drawer = (
@@ -54,6 +63,20 @@ const NavBar: FC = () => {
         </Typography>
       </Link>
       <Divider />
+      {props.id && (
+        <>
+          <List>
+            <Link href="/api/logout">
+              <ListItem disablePadding>
+                <ListItemButton sx={{ textAlign: "center" }}>
+                  <ListItemText primary="Logout" />
+                </ListItemButton>
+              </ListItem>
+            </Link>
+          </List>
+          <Divider />
+        </>
+      )}
       {!props.id && (
         <>
           <List>
