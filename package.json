@@ -1,5 +1,5 @@
 {
-  "name": "adolist",
+  "name": "adolist-firebase",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,31 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@emotion/react": "^11.10.8",
-    "@emotion/styled": "^11.10.8",
-    "@mui/icons-material": "^5.11.16",
-    "@mui/material": "^5.12.2",
-    "@types/crypto-js": "^4.1.1",
-    "classnames": "^2.3.2",
-    "crypto-js": "^4.1.1",
-    "eslint": "8.39.0",
-    "eslint-config-next": "13.3.1",
-    "next": "13.3.1",
-    "pg": "^8.10.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-hook-form": "^7.43.9",
-    "react-textarea-autosize": "^8.4.1",
-    "sass": "^1.62.0",
-    "socket.io": "^4.6.1",
-    "socket.io-client": "^4.6.1"
+    "firebase": "10.14.1",
+    "next": "14.2.15",
+    "react": "^18",
+    "react-dom": "^18",
+    "sass": "^1.79.5"
   },
   "devDependencies": {
-    "@types/node": "18.16.0",
-    "@types/pg": "^8.6.6",
-    "@types/react": "18.0.38",
-    "@types/react-dom": "18.0.11",
-    "@types/socket.io": "^3.0.2",
-    "typescript": "5.0.4"
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
+    "typescript": "^5"
   }
 }
