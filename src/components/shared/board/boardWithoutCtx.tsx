@@ -1,6 +1,18 @@
 "use client";
 
+import { useAuth } from "@/components/contexts/auth";
+import { getDefaultData, useBoard } from "@/components/contexts/board";
+import List from "@/components/shared/board/list";
+import BoardType from "@/types/board";
+import TaskType from "@/types/task";
+import UserType from "@/types/user";
+import getCollection from "@/utils/firestore";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SendIcon from "@mui/icons-material/Send";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Card,
   CardActions,
@@ -8,23 +20,14 @@ import {
   Grid,
   IconButton,
   TextareaAutosize,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, FC, useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
+import { ChangeEvent, FC, useEffect, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
-import List from "@/components/shared/board/list";
-import BoardType from "@/types/board";
-import { getDefaultData, useBoard } from "@/components/contexts/board";
-import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ShareModal from "./shareModal";
 import DeleteModal from "./deleteModal";
-import TaskType from "@/types/task";
-import UserType from "@/types/user";
-import { useAuthFetcher } from "@/components/contexts/auth";
+import ShareModal from "./shareModal";
+import useMountUnmount from "@/clientlib/mountUnmount";
 
 export type Props = {
   data?: BoardType;
@@ -32,7 +35,7 @@ export type Props = {
 };
 
 const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
-  const { user } = useAuthFetcher();
+  const { user } = useAuth();
 
   const { createBoard, forcedData, setForcedData, formData } = useBoard();
   const { handleSubmit } = formData;
@@ -40,9 +43,12 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [localBoardName, setLocalBoardName] = useState<string>("");
+
   const onSubmit = handleSubmit(async (data) => {
     //dont use data because we are dealing with a dynamic form and i cant be bothered to figure out how to make react-form-hook work with a dynamic number of inputs
 
+    //TODO: create new board
     // socket.emit("createBoard", {
     //   auth: getAuthCookie(),
     //   data: forcedData,
@@ -56,21 +62,23 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
 
   const isUsingForcedData = createBoard;
 
-  const onNameChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const onNameChange = async (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (isUsingForcedData) {
       const newForcedData = { ...forcedData };
       newForcedData.name = e.target.value;
       setForcedData(newForcedData);
     } else {
-      // const newProps = { ...props };
-      // if (!newProps.boards) return;
-      // newProps.boards[data!.id].name = e.target.value;
-      // setProps(newProps);
-      // socket?.emit("setBoardName", {
-      //   auth: getAuthCookie(),
-      //   id: data!.id,
-      //   name: e.target.value,
-      // });
+      //TODO: add debouncer, no need to update text so frequently
+      setLocalBoardName(e.target.value);
+      setDoc(
+        doc(getCollection("boards"), id),
+        {
+          name: e.target.value,
+        },
+        {
+          merge: true,
+        }
+      );
     }
   };
 
@@ -84,8 +92,12 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
 
   const useData = isUsingForcedData ? forcedData : data;
 
+  useEffect(() => {
+    setLocalBoardName(useData?.name ?? "");
+  }, [useData]);
+
   const renderOwnerButtons = () => {
-    if (useData != null && useData.ownerRef?.id !== user?.uid) {
+    if (useData != null && useData.ownerId !== user?.uid) {
       return null;
     }
 
@@ -114,17 +126,21 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
     hasCheckedItem = forcedData.tasks.find((task) => task.checked) != null;
     boardTasks = forcedData.tasks;
   } else {
-    // if (props.tasks && props.boardShares) {
-    //   for (const taskId of data!.tasks) {
-    //     boardTasks.push(props.tasks[taskId]);
-    //     if (props.tasks[taskId].checked) {
-    //       hasCheckedItem = true;
-    //     }
-    //   }
-    //   for (const shareId of data!.shares) {
-    //     boardShares.push(props.boardShares[shareId]);
-    //   }
-    // }
+    if (data) {
+      boardTasks = data.tasks;
+      hasCheckedItem = data.tasks.find((task) => task.checked) != null;
+      // if (data.tasks && data.boardShares) {
+      //   for (const taskId of data!.tasks) {
+      //     boardTasks.push(data.tasks[taskId]);
+      //     if (data.tasks[taskId].checked) {
+      //       hasCheckedItem = true;
+      //     }
+      //   }
+      //   for (const shareId of data!.shares) {
+      //     boardShares.push(data.boardShares[shareId]);
+      //   }
+      // }
+    }
   }
 
   const finalBoardId = id ?? "";
@@ -139,7 +155,7 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
                 className={css.input}
                 required
                 placeholder="Title"
-                value={useData?.name}
+                value={localBoardName}
                 onChange={onNameChange}
               />
               {renderOwnerButtons()}

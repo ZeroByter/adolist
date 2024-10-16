@@ -36,24 +36,24 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId, boardShares }) => {
     setSearch(e.target.value);
   };
 
-  useEffect(() => {
-    (async () => {
-      const rawResponse = await fetch("/api/shareBoardSearchUsers", {
-        body: JSON.stringify({
-          boardId: boardId,
-          search: debouncedSearch,
-        }),
-        method: "POST",
-      });
-      const response = await rawResponse.json();
+  // useEffect(() => {
+  //   (async () => {
+  //     const rawResponse = await fetch("/api/shareBoardSearchUsers", {
+  //       body: JSON.stringify({
+  //         boardId: boardId,
+  //         search: debouncedSearch,
+  //       }),
+  //       method: "POST",
+  //     });
+  //     const response = await rawResponse.json();
 
-      if (response.error == null) {
-        setSearchedUsers(response.data);
-      } else {
-        setSearchedUsers([]);
-      }
-    })();
-  }, [boardId, debouncedSearch]);
+  //     if (response.error == null) {
+  //       setSearchedUsers(response.data);
+  //     } else {
+  //       setSearchedUsers([]);
+  //     }
+  //   })();
+  // }, [boardId, debouncedSearch]);
 
   const onAddUser = async (userId: string) => {
     setSearch("");

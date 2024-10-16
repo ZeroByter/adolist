@@ -1,25 +1,35 @@
+import { useBoard } from "@/components/contexts/board";
+import TaskType from "@/types/task";
+import getCollection from "@/utils/firestore";
+import { Box, Checkbox, TextareaAutosize } from "@mui/material";
+import { doc, setDoc } from "firebase/firestore";
 import {
   ChangeEvent,
-  KeyboardEvent,
   FC,
   FocusEvent,
-  useRef,
+  KeyboardEvent,
   useEffect,
+  useRef,
+  useState,
 } from "react";
 import css from "./listItem.module.scss";
-import { Box, Checkbox, TextareaAutosize } from "@mui/material";
-import TaskType from "@/types/task";
-import { useBoard } from "@/components/contexts/board";
 
 type Props = {
   data?: TaskType;
+  id?: string;
   boardId: string;
 };
 
-const ListItem: FC<Props> = ({ data, boardId }) => {
+const ListItem: FC<Props> = ({ data, id, boardId }) => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const { createBoard, forcedData, setForcedData } = useBoard();
+  const { createBoard, forcedData, setForcedData, boardData } = useBoard();
+
+  const [localTaskText, setLocalTaskText] = useState<string>("");
+
+  useEffect(() => {
+    setLocalTaskText(data?.text ?? "");
+  }, [data]);
 
   // useEffect(() => {
   //   if (data && props.focusedTask == data?.id) {
@@ -63,26 +73,33 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
   };
 
   const onCheckedChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // if (createBoard) {
-    //   const newForcedData = { ...forcedData };
-    //   const foundTask = newForcedData.tasks.find(
-    //     (task: any) => task.id === data?.id
-    //   );
-    //   foundTask && (foundTask.checked = e.target.checked);
-    //   setForcedData(newForcedData);
-    // } else {
-    //   const newProps = { ...props };
-    //   if (!newProps.tasks || !data?.id) return;
-    //   const foundTask = newProps.tasks[data?.id];
-    //   if (!foundTask) return;
-    //   foundTask.checked = e.target.checked;
-    //   setProps(newProps);
-    //   socket?.emit("setTaskChecked", {
-    //     auth: getAuthCookie(),
-    //     id: data!.id,
-    //     checked: e.target.checked,
-    //   });
-    // }
+    if (createBoard) {
+      const newForcedData = { ...forcedData };
+      const foundTask = newForcedData.tasks.find(
+        (task: any) => task.id === data?.id
+      );
+      foundTask && (foundTask.checked = e.target.checked);
+      setForcedData(newForcedData);
+    } else {
+      setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: boardData?.tasks.map((task) => {
+            if (task.id === id) {
+              return {
+                ...task,
+                checked: e.target.checked,
+              };
+            } else {
+              return task;
+            }
+          }),
+        },
+        {
+          merge: true,
+        }
+      );
+    }
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -123,27 +140,35 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     }
   };
 
-  const onTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    // if (createBoard) {
-    //   const newForcedData = { ...forcedData };
-    //   const foundTask = newForcedData.tasks.find(
-    //     (task) => task.id === data?.id
-    //   );
-    //   foundTask && (foundTask.text = e.target.value);
-    //   setForcedData(newForcedData);
-    // } else {
-    //   const newProps = { ...props };
-    //   if (!newProps.tasks || !data?.id) return;
-    //   const foundTask = newProps.tasks[data?.id];
-    //   if (!foundTask) return;
-    //   foundTask.text = e.target.value;
-    //   setProps(newProps);
-    //   socket?.emit("setTaskText", {
-    //     auth: getAuthCookie(),
-    //     id: data!.id,
-    //     text: e.target.value,
-    //   });
-    // }
+  const onTextChange = async (e: ChangeEvent<HTMLTextAreaElement>) => {
+    if (createBoard) {
+      const newForcedData = { ...forcedData };
+      const foundTask = newForcedData.tasks.find(
+        (task) => task.id === data?.id
+      );
+      foundTask && (foundTask.text = e.target.value);
+      setForcedData(newForcedData);
+    } else {
+      setLocalTaskText(e.target.value);
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: boardData?.tasks.map((task) => {
+            if (task.id === id) {
+              return {
+                ...task,
+                text: e.target.value,
+              };
+            } else {
+              return task;
+            }
+          }),
+        },
+        {
+          merge: true,
+        }
+      );
+    }
   };
 
   const deleteTask = () => {
@@ -199,10 +224,11 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
           // autoFocus={
           //   data != null && (data.ownerRef == null || data.updatedBy.id === props.id)
           // }
+          key="plsdontupdate"
           ref={inputRef}
           required={data != null}
           placeholder="An awesome task"
-          value={data?.text}
+          value={localTaskText}
           onKeyDown={onKeyDown}
           onChange={onTextChange}
           onBlur={onBlur}

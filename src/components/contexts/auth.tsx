@@ -40,6 +40,6 @@ const AuthContextProvider: FC<Props> = ({ children }) => {
 
 export default AuthContextProvider;
 
-export const useAuthFetcher = () => {
+export const useAuth = () => {
   return useContext(AuthContext);
 };

@@ -1,16 +1,16 @@
-import { DocumentReference, Timestamp } from "firebase/firestore"
-import UserDataType from "./user"
+import { Timestamp } from "firebase/firestore";
 
 type TaskType = {
-  ownerRef: DocumentReference<UserDataType>;
+  id: string;
+  ownerId: string;
   text: string;
   checked: boolean;
   timeCreated: Timestamp;
   timeUpdated: Timestamp;
-  updatedBy: DocumentReference<UserDataType>;
+  updatedBy: string;
   listOrder: number;
   lastChecked: Timestamp;
-  lastCheckedBy: DocumentReference<UserDataType>;
-}
+  lastCheckedBy: string;
+};
 
-export default TaskType
+export default TaskType;

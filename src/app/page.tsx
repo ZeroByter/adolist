@@ -5,11 +5,16 @@ import { NextPage } from "next";
 import { Container, Grid, Typography } from "@mui/material";
 // import Board from "@/components/shared/board";
 import Link from "next/link";
-import { useAuthFetcher } from "@/components/contexts/auth";
+import { useAuth } from "@/components/contexts/auth";
 import Board from "@/components/shared/board";
+import { useUserBoards } from "@/components/contexts/userBoards";
+import { ChangeEvent, useEffect, useState } from "react";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
+import getCollection from "@/utils/firestore";
 
 const Page: NextPage = () => {
-  const { user } = useAuthFetcher();
+  const { user } = useAuth();
+  const { boards } = useUserBoards();
 
   const welcomeNewUser = () => {
     if (user) return;
@@ -43,32 +48,22 @@ const Page: NextPage = () => {
     );
   };
 
-  const boards = {};
-
-  const renderBoards = Object.values(boards ?? {}).map((board: any) => {
+  const renderBoards = boards.map((board) => {
     return (
       <Grid key={board.id} item xs={12} lg={4}>
-        {/* <Board data={board} /> */}
+        <Board id={board.id} data={board.data()} />
       </Grid>
     );
   });
 
   return (
-    <>
-      <Head>
-        <title>ADoList</title>
-        <meta name="description" content="Live, shareable to-do lists!" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <Container style={{ marginTop: "20px" }}>
-        <Grid container>
-          {welcomeNewUser()}
-          {renderCreateBoard()}
-          <Grid container>{renderBoards}</Grid>
-        </Grid>
-      </Container>
-    </>
+    <Container style={{ marginTop: "20px" }}>
+      <Grid container>
+        {welcomeNewUser()}
+        {renderCreateBoard()}
+        <Grid container>{renderBoards}</Grid>
+      </Grid>
+    </Container>
   );
 };
 

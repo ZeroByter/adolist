@@ -2,11 +2,11 @@
 
 import BoardType from "@/types/board";
 import { Timestamp } from "firebase/firestore";
-import { createContext, useContext, FC, ReactNode, useState } from "react";
+import { FC, ReactNode, createContext, useContext, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 
 export const getDefaultData = (): BoardType => ({
-  ownerRef: undefined as any,
+  ownerId: "",
   name: "",
   timeCreated: Timestamp.now(),
   timeUpdated: Timestamp.now(),
@@ -26,23 +26,30 @@ type ContextType = {
   setForcedData: (newData: BoardType) => void;
 
   formData: UseFormReturn<FormData, any>;
+
+  boardData?: BoardType;
 };
 
 export const BoardContext = createContext<ContextType>({} as ContextType);
 
 type Props = {
   children: ReactNode;
+  boardData?: BoardType;
   createBoard: boolean;
 };
 
-const BoardContextProvider: FC<Props> = ({ children, createBoard }) => {
+const BoardContextProvider: FC<Props> = ({
+  children,
+  createBoard,
+  boardData,
+}) => {
   const formData = useForm<FormData>();
 
   const [forcedData, setForcedData] = useState<BoardType>(getDefaultData());
 
   return (
     <BoardContext.Provider
-      value={{ createBoard, forcedData, setForcedData, formData }}
+      value={{ createBoard, forcedData, setForcedData, formData, boardData }}
     >
       {children}
     </BoardContext.Provider>

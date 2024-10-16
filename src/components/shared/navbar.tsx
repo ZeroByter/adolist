@@ -17,14 +17,14 @@ import { FC, useState } from "react";
 import Link from "next/link";
 import css from "./navbar.module.scss";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useAuthFetcher } from "../contexts/auth";
+import { useAuth } from "../contexts/auth";
 import { signOut } from "firebase/auth";
 import firebaseAuth from "@/utils/auth";
 
 const DRAWER_WIDTH = 240;
 
 const NavBar: FC = () => {
-  const { user } = useAuthFetcher();
+  const { user } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
