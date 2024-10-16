@@ -1,66 +1,75 @@
-'use client'
+"use client";
 
-import UserDataType from "@/types/user";
-import getCollection from "@/utils/firestore";
-import { addDoc, doc, getDoc, onSnapshot, QueryDocumentSnapshot, Timestamp } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import Head from "next/head";
+import { NextPage } from "next";
+import { Container, Grid, Typography } from "@mui/material";
+// import Board from "@/components/shared/board";
+import Link from "next/link";
+import { useAuthFetcher } from "@/components/contexts/auth";
+import Board from "@/components/shared/board";
 
+const Page: NextPage = () => {
+  const { user } = useAuthFetcher();
 
-export default function Home() {
-  const [docs, setDocs] = useState<QueryDocumentSnapshot<UserDataType>[]>([])
+  const welcomeNewUser = () => {
+    if (user) return;
 
-  useEffect(() => {
-    const unsub = onSnapshot(getCollection("users"), (snap) => {
-      setDocs(snap.docs)
-    });
+    return (
+      <Grid container>
+        <Grid item xs={12}>
+          <Typography align="center" fontSize={26}>
+            Welcome to ADoList!
+          </Typography>
+          <Typography align="center">
+            Please <Link href="/register">register</Link> a new account
+          </Typography>
+          <Typography align="center">
+            Or <Link href="/login">login</Link> to an existing account
+          </Typography>
+        </Grid>
+      </Grid>
+    );
+  };
 
-    return () => unsub()
-  }, [])
+  const renderCreateBoard = () => {
+    if (!user) return;
 
-  const handleClick = async () => {
-    try {
-      // const docRef = await addDoc(getCollection("users"), {
-      //   test_key: "test_value"
-      // });
-      // console.log("Document written with ID: ", docRef.id);
+    return (
+      <Grid container justifyContent="center">
+        <Grid item xs={10} lg={6}>
+          <Board createBoard />
+        </Grid>
+      </Grid>
+    );
+  };
 
-      // addDoc(getCollection("boards"), {
-      //   ownerRef: doc(getCollection("users"), "J6r1Dkj9xaQmrZ679Sln"),
-      //   name: "some board",
-      //   listOrder: 0,
-      //   timeCreated: Timestamp.now(),
-      //   timeUpdated: Timestamp.now(),
-      //   shares: [],
-      //   tasks: [
-      //     {
-      //       ownerRef: doc(getCollection("users"), "J6r1Dkj9xaQmrZ679Sln"),
-      //       text: "some text",
-      //       checked: false,
-      //       timeCreated: Timestamp.now(),
-      //       timeUpdated: Timestamp.now(),
-      //       updatedBy: doc(getCollection("users"), "J6r1Dkj9xaQmrZ679Sln"),
-      //       listOrder: 0,
-      //       lastChecked: Timestamp.now(),
-      //       lastCheckedBy: doc(getCollection("users"), "J6r1Dkj9xaQmrZ679Sln")
-      //     }
-      //   ]
-      // })
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  }
+  const boards = {};
 
-  const renderDocs = docs.map(doc => {
-    return <div key={doc.id}>{doc.data().displayName}</div>
-  })
+  const renderBoards = Object.values(boards ?? {}).map((board: any) => {
+    return (
+      <Grid key={board.id} item xs={12} lg={4}>
+        {/* <Board data={board} /> */}
+      </Grid>
+    );
+  });
 
   return (
-    <div>
-      <button onClick={handleClick}>pls click me</button>
-
-      <div>
-        {renderDocs}
-      </div>
-    </div>
+    <>
+      <Head>
+        <title>ADoList</title>
+        <meta name="description" content="Live, shareable to-do lists!" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <Container style={{ marginTop: "20px" }}>
+        <Grid container>
+          {welcomeNewUser()}
+          {renderCreateBoard()}
+          <Grid container>{renderBoards}</Grid>
+        </Grid>
+      </Container>
+    </>
   );
-}
+};
+
+export default Page;
