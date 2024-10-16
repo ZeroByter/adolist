@@ -1,6 +1,9 @@
+import { Timestamp } from "firebase/firestore";
+
 type UserDataType = {
   displayName: string;
-  timeCreated: number;
-}
+  displayNameL: string;
+  timeCreated: Timestamp;
+};
 
-export default UserDataType
+export default UserDataType;

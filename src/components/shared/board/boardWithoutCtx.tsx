@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/contexts/auth";
-import { getDefaultData, useBoard } from "@/components/contexts/board";
+import { useBoard } from "@/components/contexts/board";
 import List from "@/components/shared/board/list";
 import BoardType from "@/types/board";
 import TaskType from "@/types/task";
@@ -22,12 +22,12 @@ import {
   TextareaAutosize,
   Typography,
 } from "@mui/material";
-import { doc, setDoc } from "firebase/firestore";
+import { addDoc, doc, setDoc } from "firebase/firestore";
 import { ChangeEvent, FC, useEffect, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
 import DeleteModal from "./deleteModal";
 import ShareModal from "./shareModal";
-import useMountUnmount from "@/clientlib/mountUnmount";
+import { randomId } from "@/utils/randomId";
 
 export type Props = {
   data?: BoardType;
@@ -37,7 +37,8 @@ export type Props = {
 const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
   const { user } = useAuth();
 
-  const { createBoard, forcedData, setForcedData, formData } = useBoard();
+  const { createBoard, forcedData, setForcedData, formData, getDefaultData } =
+    useBoard();
   const { handleSubmit } = formData;
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -47,12 +48,8 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     //dont use data because we are dealing with a dynamic form and i cant be bothered to figure out how to make react-form-hook work with a dynamic number of inputs
+    await addDoc(getCollection("boards"), forcedData);
 
-    //TODO: create new board
-    // socket.emit("createBoard", {
-    //   auth: getAuthCookie(),
-    //   data: forcedData,
-    // });
     setForcedData(getDefaultData());
   });
 
@@ -64,9 +61,11 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
 
   const onNameChange = async (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (isUsingForcedData) {
-      const newForcedData = { ...forcedData };
-      newForcedData.name = e.target.value;
-      setForcedData(newForcedData);
+      setForcedData({
+        ...forcedData,
+        name: e.target.value,
+      });
+      setLocalBoardName(e.target.value);
     } else {
       //TODO: add debouncer, no need to update text so frequently
       setLocalBoardName(e.target.value);
@@ -120,7 +119,6 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
 
   let hasCheckedItem = false;
   let boardTasks: TaskType[] = [];
-  let boardShares: UserType[] = [];
 
   if (isUsingForcedData) {
     hasCheckedItem = forcedData.tasks.find((task) => task.checked) != null;
@@ -129,17 +127,6 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
     if (data) {
       boardTasks = data.tasks;
       hasCheckedItem = data.tasks.find((task) => task.checked) != null;
-      // if (data.tasks && data.boardShares) {
-      //   for (const taskId of data!.tasks) {
-      //     boardTasks.push(data.tasks[taskId]);
-      //     if (data.tasks[taskId].checked) {
-      //       hasCheckedItem = true;
-      //     }
-      //   }
-      //   for (const shareId of data!.shares) {
-      //     boardShares.push(data.boardShares[shareId]);
-      //   }
-      // }
     }
   }
 
@@ -204,7 +191,6 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
         <>
           <ShareModal
             boardId={finalBoardId}
-            boardShares={boardShares}
             open={showShareModal}
             onClose={() => setShowShareModal(false)}
           />

@@ -35,7 +35,10 @@ const UserBoardsContextProvider: FC<Props> = ({ children }) => {
   const [boards, setBoards] = useState<DocumentSnapshot<BoardType>[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setBoards([]);
+      return;
+    }
 
     const snapshotQuery = query(
       getCollection("boards"),

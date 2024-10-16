@@ -37,20 +37,6 @@ const LoginPage = () => {
   const onSubmit = handleSubmit(async (data) => {
     await signInWithEmailAndPassword(firebaseAuth, data.email, data.password);
     router.push("/");
-
-    // socket.once("apiResponse", async (response) => {
-    //   if (!response.error) {
-    //     await fetch("/api/setCookie", {
-    //       headers: {},
-    //       body: JSON.stringify(data),
-    //       method: "POST",
-    //     });
-    //     Router.push("/");
-    //   } else {
-    //     setError(response.error);
-    //   }
-    // });
-    // socket.emit("register", data);
   });
 
   return (

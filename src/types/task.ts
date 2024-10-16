@@ -9,8 +9,8 @@ type TaskType = {
   timeUpdated: Timestamp;
   updatedBy: string;
   listOrder: number;
-  lastChecked: Timestamp;
-  lastCheckedBy: string;
+  lastChecked?: Timestamp;
+  lastCheckedBy?: string;
 };
 
 export default TaskType;

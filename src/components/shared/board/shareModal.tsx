@@ -13,57 +13,95 @@ import {
   Typography,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
-import { ChangeEvent, FC, useEffect, useState } from "react";
+import { ChangeEvent, FC, useEffect, useRef, useState } from "react";
 import { blue } from "@mui/material/colors";
 import useDebounce from "@/clientlib/useDebounce";
 import UserType from "@/types/user";
+import {
+  doc,
+  documentId,
+  DocumentSnapshot,
+  endAt,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  setDoc,
+  startAt,
+  where,
+} from "firebase/firestore";
+import getCollection from "@/utils/firestore";
+import { useAuth } from "@/components/contexts/auth";
+import { useBoard } from "@/components/contexts/board";
+import ShareModalUser from "./shareModalUser";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   boardId: string;
-  // boardShares: UserType[];
-  boardShares: any[];
 };
 
-const ShareModal: FC<Props> = ({ open, onClose, boardId, boardShares }) => {
+const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
+  const { user } = useAuth();
+  const { boardData } = useBoard();
+
+  const initialLoadsRef = useRef<number>(0);
+
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce<string>(search, 250);
-  // const [searchedUsers, setSearchedUsers] = useState<UserType[]>([]);
-  const [searchedUsers, setSearchedUsers] = useState<any[]>([]);
+  const [searchedUsers, setSearchedUsers] = useState<
+    DocumentSnapshot<UserType>[]
+  >([]);
 
   const onSearchChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
 
-  // useEffect(() => {
-  //   (async () => {
-  //     const rawResponse = await fetch("/api/shareBoardSearchUsers", {
-  //       body: JSON.stringify({
-  //         boardId: boardId,
-  //         search: debouncedSearch,
-  //       }),
-  //       method: "POST",
-  //     });
-  //     const response = await rawResponse.json();
+  useEffect(() => {
+    (async () => {
+      if (initialLoadsRef.current < 2) {
+        initialLoadsRef.current += 1;
+        return;
+      }
 
-  //     if (response.error == null) {
-  //       setSearchedUsers(response.data);
-  //     } else {
-  //       setSearchedUsers([]);
-  //     }
-  //   })();
-  // }, [boardId, debouncedSearch]);
+      if (debouncedSearch == "") {
+        setSearchedUsers([]);
+        return;
+      }
+
+      const lowerDebouncedSearch = debouncedSearch.toLowerCase();
+      let notInArray = [user!.uid];
+
+      if (boardData!.shares.length > 0) {
+        notInArray = [...notInArray, ...boardData!.shares];
+      }
+
+      const searchQuery = query(
+        getCollection("users"),
+        where(documentId(), "not-in", notInArray),
+        where("displayNameL", ">=", lowerDebouncedSearch),
+        where("displayNameL", "<=", lowerDebouncedSearch + "\uf8ff"),
+        limit(20)
+      );
+
+      const results = await getDocs(searchQuery);
+      setSearchedUsers(results.docs);
+    })();
+  }, [boardData, boardId, debouncedSearch, user]);
 
   const onAddUser = async (userId: string) => {
     setSearch("");
     setSearchedUsers([]);
 
-    // socket.emit("shareBoardWithUser", getAuthCookie(), boardId, userId);
-  };
-
-  const onRemoveUser = async (userId: string) => {
-    // socket.emit("unshareBoardWithUser", getAuthCookie(), boardId, userId);
+    await setDoc(
+      doc(getCollection("boards"), boardId),
+      {
+        shares: [...boardData!.shares, userId],
+      },
+      {
+        merge: true,
+      }
+    );
   };
 
   const renderSearchedUsers = searchedUsers.map((user) => {
@@ -79,27 +117,14 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId, boardShares }) => {
               <PersonIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary={user.username} />
+          <ListItemText primary={user.data()?.displayName} />
         </ListItemButton>
       </ListItem>
     );
   });
 
-  const renderSharedUsers = boardShares.map((user) => (
-    <ListItem key={user.id} disableGutters disablePadding>
-      <ListItemButton
-        onClick={() => {
-          onRemoveUser(user.id);
-        }}
-      >
-        <ListItemAvatar>
-          <Avatar sx={{ bgcolor: blue[100], color: blue[600] }}>
-            <PersonIcon />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText primary={user.username} />
-      </ListItemButton>
-    </ListItem>
+  const renderSharedUsers = boardData?.shares.map((userId) => (
+    <ShareModalUser key={userId} userId={userId} />
   ));
 
   return (

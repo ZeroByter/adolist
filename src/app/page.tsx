@@ -1,16 +1,12 @@
 "use client";
 
-import Head from "next/head";
-import { NextPage } from "next";
 import { Container, Grid, Typography } from "@mui/material";
-// import Board from "@/components/shared/board";
-import Link from "next/link";
+import { NextPage } from "next";
 import { useAuth } from "@/components/contexts/auth";
-import Board from "@/components/shared/board";
+import FocusedTaskContextProvider from "@/components/contexts/focusedTask";
 import { useUserBoards } from "@/components/contexts/userBoards";
-import { ChangeEvent, useEffect, useState } from "react";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
-import getCollection from "@/utils/firestore";
+import Board from "@/components/shared/board";
+import Link from "next/link";
 
 const Page: NextPage = () => {
   const { user } = useAuth();
@@ -59,9 +55,11 @@ const Page: NextPage = () => {
   return (
     <Container style={{ marginTop: "20px" }}>
       <Grid container>
-        {welcomeNewUser()}
-        {renderCreateBoard()}
-        <Grid container>{renderBoards}</Grid>
+        <FocusedTaskContextProvider>
+          {welcomeNewUser()}
+          {renderCreateBoard()}
+          <Grid container>{renderBoards}</Grid>
+        </FocusedTaskContextProvider>
       </Grid>
     </Container>
   );

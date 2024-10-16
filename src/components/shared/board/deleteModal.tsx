@@ -1,4 +1,6 @@
+import getCollection from "@/utils/firestore";
 import { Button, Dialog, DialogActions, DialogTitle } from "@mui/material";
+import { deleteDoc, doc } from "firebase/firestore";
 import { FC } from "react";
 
 type Props = {
@@ -12,7 +14,7 @@ const DeleteModal: FC<Props> = ({ open, onClose, boardId, boardName }) => {
   const onDelete = async () => {
     onClose();
 
-    // socket.emit("deleteBoard", getAuthCookie(), boardId);
+    deleteDoc(doc(getCollection("boards"), boardId));
   };
 
   const onCancel = async () => {

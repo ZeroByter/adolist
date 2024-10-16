@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import css from "./register.module.scss";
+import { addDoc, doc, setDoc, Timestamp } from "firebase/firestore";
+import getCollection from "@/utils/firestore";
 
 type FormData = {
   email: string;
@@ -44,29 +46,19 @@ const RegisterPage = () => {
       return;
     }
 
-    await createUserWithEmailAndPassword(
+    const newUser = await createUserWithEmailAndPassword(
       firebaseAuth,
       data.email,
       data.password
     );
 
-    //TODO: also create user object in users collection1
+    setDoc(doc(getCollection("users"), newUser.user.uid), {
+      displayName: data.displayName,
+      displayNameL: data.displayName.toLowerCase(),
+      timeCreated: Timestamp.now(),
+    });
 
     router.push("/");
-
-    // socket.once("apiResponse", async (response) => {
-    //   if (!response.error) {
-    //     await fetch("/api/setCookie", {
-    //       headers: {},
-    //       body: JSON.stringify(data),
-    //       method: "POST",
-    //     });
-    //     Router.push("/");
-    //   } else {
-    //     setError(response.error);
-    //   }
-    // });
-    // socket.emit("register", data);
   });
 
   return (

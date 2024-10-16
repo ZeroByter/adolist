@@ -13,6 +13,7 @@ const Board: FC<Props & WithCtxProps> = (props) => {
     <BoardContextProvider
       createBoard={props.createBoard ?? false}
       boardData={props.data}
+      boardId={props.id}
     >
       <BoardWithoutCtx {...props}></BoardWithoutCtx>
     </BoardContextProvider>
