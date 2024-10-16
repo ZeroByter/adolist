@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /boards/{boardId} {
+      //allow read, write: if request.time < timestamp.date(2024, 11, 14);
+      allow read, update:
+      if request.auth != null && // must be authenticated
+      (
+      resource.data.ownerId == request.auth.uid ||
+      request.auth.uid in resource.data.shares // can only edit boards we are the owner of or if we are shared with them
+      ) &&
+      request.resource.data.ownerId == resource.data.ownerId && // but can't update the ownerId to something it isn't already
+      (
+      !('shares' in request.resource.data) ||        // if 'shares' field is not being modified
+      resource.data.ownerId == request.auth.uid      // if 'shares' is being modified, only the owner can do so
+      );
+
+      allow delete:
+      if request.auth != null && // must be authenticated
+      resource.data.ownerId == request.auth.uid // can only delete boards we are the owner of
+
+      allow create:
+      if request.auth != null && // must be authenticated
+      request.resource.data.ownerId == request.auth.uid // can only create boards we are the owner of
+    }
+
+    match /users/{userId} {
+      allow create:
+      if request.auth != null &&
+      userId == request.auth.uid;
+
+      allow read: if true;
+    }
+  }
+}

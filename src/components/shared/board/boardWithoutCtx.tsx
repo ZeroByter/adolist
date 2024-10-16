@@ -1,4 +1,18 @@
+"use client";
+
+import { useAuth } from "@/components/contexts/auth";
+import { useBoard } from "@/components/contexts/board";
+import List from "@/components/shared/board/list";
+import BoardType from "@/types/board";
+import TaskType from "@/types/task";
+import UserType from "@/types/user";
+import getCollection from "@/utils/firestore";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SendIcon from "@mui/icons-material/Send";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Card,
   CardActions,
@@ -6,49 +20,36 @@ import {
   Grid,
   IconButton,
   TextareaAutosize,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, FC, useState } from "react";
+import { addDoc, doc, setDoc } from "firebase/firestore";
+import { ChangeEvent, FC, useEffect, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
-import List from "@/components/shared/board/list";
-import BoardType from "@/types/client/board/board";
-import { getDefaultData, useBoard } from "@/components/contexts/board";
-import { useSocket } from "@/components/contexts/socket";
-import getAuthCookie from "@/clientlib/getAuthCookie";
-import { useSSRFetcher } from "@/components/contexts/ssrFetcher";
-import { IndexPropsType } from "@/types/indexProps";
-import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ShareModal from "./shareModal";
 import DeleteModal from "./deleteModal";
-import TaskType from "@/types/client/board/task";
-import UserType from "@/types/client/board/user";
+import ShareModal from "./shareModal";
+import { randomId } from "@/utils/randomId";
 
 export type Props = {
   data?: BoardType;
+  id?: string;
 };
 
-const BoardWithoutCtx: FC<Props> = ({ data }) => {
-  const { props, setProps }: IndexPropsType = useSSRFetcher();
-  const { socket } = useSocket();
-  const { createBoard, forcedData, setForcedData, formData } = useBoard();
-  const { control, handleSubmit } = formData;
+const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
+  const { user } = useAuth();
+
+  const { createBoard, forcedData, setForcedData, formData, getDefaultData } =
+    useBoard();
+  const { handleSubmit } = formData;
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [localBoardName, setLocalBoardName] = useState<string>("");
+
   const onSubmit = handleSubmit(async (data) => {
     //dont use data because we are dealing with a dynamic form and i cant be bothered to figure out how to make react-form-hook work with a dynamic number of inputs
+    await addDoc(getCollection("boards"), forcedData);
 
-    if (!socket) return;
-
-    socket.emit("createBoard", {
-      auth: getAuthCookie(),
-      data: forcedData,
-    });
     setForcedData(getDefaultData());
   });
 
@@ -58,25 +59,25 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
 
   const isUsingForcedData = createBoard;
 
-  const onNameChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const onNameChange = async (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (isUsingForcedData) {
-      const newForcedData = { ...forcedData };
-      newForcedData.name = e.target.value;
-      setForcedData(newForcedData);
-    } else {
-      const newProps = { ...props };
-
-      if (!newProps.boards) return;
-
-      newProps.boards[data!.id].name = e.target.value;
-
-      setProps(newProps);
-
-      socket?.emit("setBoardName", {
-        auth: getAuthCookie(),
-        id: data!.id,
+      setForcedData({
+        ...forcedData,
         name: e.target.value,
       });
+      setLocalBoardName(e.target.value);
+    } else {
+      //TODO: add debouncer, no need to update text so frequently
+      setLocalBoardName(e.target.value);
+      setDoc(
+        doc(getCollection("boards"), id),
+        {
+          name: e.target.value,
+        },
+        {
+          merge: true,
+        }
+      );
     }
   };
 
@@ -90,8 +91,12 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
 
   const useData = isUsingForcedData ? forcedData : data;
 
+  useEffect(() => {
+    setLocalBoardName(useData?.name ?? "");
+  }, [useData]);
+
   const renderOwnerButtons = () => {
-    if (useData != null && useData.ownerid != props.id) {
+    if (useData != null && useData.ownerId !== user?.uid) {
       return null;
     }
 
@@ -114,37 +119,30 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
 
   let hasCheckedItem = false;
   let boardTasks: TaskType[] = [];
-  let boardShares: UserType[] = [];
 
   if (isUsingForcedData) {
     hasCheckedItem = forcedData.tasks.find((task) => task.checked) != null;
     boardTasks = forcedData.tasks;
   } else {
-    if (props.tasks && props.boardShares) {
-      for (const taskId of data!.tasks) {
-        boardTasks.push(props.tasks[taskId]);
-        if (props.tasks[taskId].checked) {
-          hasCheckedItem = true;
-        }
-      }
-
-      for (const shareId of data!.shares) {
-        boardShares.push(props.boardShares[shareId]);
-      }
+    if (data) {
+      boardTasks = data.tasks;
+      hasCheckedItem = data.tasks.find((task) => task.checked) != null;
     }
   }
+
+  const finalBoardId = id ?? "";
 
   return (
     <>
       <form className={css.root} onSubmit={onSubmit}>
-        <Card key={useData?.id} variant="outlined">
+        <Card key={id} variant="outlined">
           <CardContent>
             <div className={css.header}>
               <TextareaAutosize
                 className={css.input}
                 required
                 placeholder="Title"
-                value={useData?.name}
+                value={localBoardName}
                 onChange={onNameChange}
               />
               {renderOwnerButtons()}
@@ -153,7 +151,7 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
               {useData && (
                 <>
                   <List
-                    boardId={useData.id}
+                    boardId={finalBoardId}
                     type="ONLY_INCOMPLETE"
                     tasks={boardTasks}
                   />
@@ -164,7 +162,7 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
                       </AccordionSummary>
                       <AccordionDetails>
                         <List
-                          boardId={useData.id}
+                          boardId={finalBoardId}
                           type="ONLY_COMPLETE"
                           tasks={boardTasks}
                         />
@@ -192,13 +190,12 @@ const BoardWithoutCtx: FC<Props> = ({ data }) => {
       {useData && (
         <>
           <ShareModal
-            boardId={useData.id}
-            boardShares={boardShares}
+            boardId={finalBoardId}
             open={showShareModal}
             onClose={() => setShowShareModal(false)}
           />
           <DeleteModal
-            boardId={useData.id}
+            boardId={finalBoardId}
             boardName={useData.name}
             open={showDeleteModal}
             onClose={() => setShowDeleteModal(false)}

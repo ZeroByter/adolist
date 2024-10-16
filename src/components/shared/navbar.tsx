@@ -1,4 +1,3 @@
-import { IndexPropsType } from "@/types/indexProps";
 import {
   AppBar,
   Box,
@@ -15,15 +14,17 @@ import {
   Typography,
 } from "@mui/material";
 import { FC, useState } from "react";
-import { useSSRFetcher } from "../contexts/ssrFetcher";
 import Link from "next/link";
 import css from "./navbar.module.scss";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useAuth } from "../contexts/auth";
+import { signOut } from "firebase/auth";
+import firebaseAuth from "@/utils/auth";
 
 const DRAWER_WIDTH = 240;
 
 const NavBar: FC = () => {
-  const { props }: IndexPropsType = useSSRFetcher();
+  const { user } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -31,17 +32,21 @@ const NavBar: FC = () => {
     setMobileOpen((oldState) => !oldState);
   };
 
+  const handleLogout = () => {
+    signOut(firebaseAuth);
+  };
+
   const renderButtons = () => {
     return (
       <>
-        {props.id &&
+        {user && (
           <Box sx={{ display: { xs: "none", sm: "block" } }}>
-            <Link href="/api/logout">
-              <Button color="inherit">Logout</Button>
-            </Link>
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
+            </Button>
           </Box>
-        }
-        {!props.id &&
+        )}
+        {!user && (
           <Box sx={{ display: { xs: "none", sm: "block" } }}>
             <Link href="/register">
               <Button color="inherit">Register</Button>
@@ -50,9 +55,9 @@ const NavBar: FC = () => {
               <Button color="inherit">Login</Button>
             </Link>
           </Box>
-        }
+        )}
       </>
-    )
+    );
   };
 
   const drawer = (
@@ -63,21 +68,22 @@ const NavBar: FC = () => {
         </Typography>
       </Link>
       <Divider />
-      {props.id && (
+      {user && (
         <>
           <List>
-            <Link href="/api/logout">
-              <ListItem disablePadding>
-                <ListItemButton sx={{ textAlign: "center" }}>
-                  <ListItemText primary="Logout" />
-                </ListItemButton>
-              </ListItem>
-            </Link>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={handleLogout}
+                sx={{ textAlign: "center" }}
+              >
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </ListItem>
           </List>
           <Divider />
         </>
       )}
-      {!props.id && (
+      {!user && (
         <>
           <List>
             <Link href="/register">
@@ -99,13 +105,6 @@ const NavBar: FC = () => {
         </>
       )}
       <List>
-        <Link href="https://trello.com/b/uAM4F8fI/adolist" target="_blank">
-          <ListItem disablePadding>
-            <ListItemButton sx={{ textAlign: "center" }}>
-              <ListItemText primary="Trello" />
-            </ListItemButton>
-          </ListItem>
-        </Link>
         <Link href="https://github.com/ZeroByter/adolist" target="_blank">
           <ListItem disablePadding>
             <ListItemButton sx={{ textAlign: "center" }}>
@@ -140,12 +139,6 @@ const NavBar: FC = () => {
             </Typography>
             {renderButtons()}
             <Box sx={{ display: { xs: "none", sm: "block" } }}>
-              <Link
-                href="https://trello.com/b/uAM4F8fI/adolist"
-                target="_blank"
-              >
-                <Button color="inherit">Trello</Button>
-              </Link>
               <Link href="https://github.com/ZeroByter/adolist" target="_blank">
                 <Button color="inherit">GitHub</Button>
               </Link>

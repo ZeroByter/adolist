@@ -1,7 +1,6 @@
+import getCollection from "@/utils/firestore";
 import { Button, Dialog, DialogActions, DialogTitle } from "@mui/material";
-import BoardType from "@/types/client/board/board";
-import { useSocket } from "@/components/contexts/socket";
-import getAuthCookie from "@/clientlib/getAuthCookie";
+import { deleteDoc, doc } from "firebase/firestore";
 import { FC } from "react";
 
 type Props = {
@@ -12,19 +11,13 @@ type Props = {
 };
 
 const DeleteModal: FC<Props> = ({ open, onClose, boardId, boardName }) => {
-  const { socket } = useSocket();
-
   const onDelete = async () => {
-    if (socket == null) return;
-
     onClose();
 
-    socket.emit("deleteBoard", getAuthCookie(), boardId);
+    deleteDoc(doc(getCollection("boards"), boardId));
   };
 
   const onCancel = async () => {
-    if (socket == null) return;
-
     onClose();
   };
 

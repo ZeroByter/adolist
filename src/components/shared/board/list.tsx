@@ -1,7 +1,7 @@
+import TaskType from "@/types/task";
 import { FC } from "react";
-import ListItem from "./listItem";
 import css from "./list.module.scss";
-import TaskType from "@/types/client/board/task";
+import ListItem from "./listItem";
 
 type ListType = "ONLY_INCOMPLETE" | "ONLY_COMPLETE";
 
@@ -18,7 +18,9 @@ const List: FC<Props> = ({ boardId, tasks, type }) => {
       (type == "ONLY_INCOMPLETE" && task.checked)
     )
       return null;
-    return <ListItem key={task.id} data={task} boardId={boardId} />;
+    return (
+      <ListItem key={task.id} id={task.id} data={task} boardId={boardId} />
+    );
   });
 
   return (

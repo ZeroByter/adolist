@@ -1,69 +1,94 @@
+import { useBoard } from "@/components/contexts/board";
+import TaskType from "@/types/task";
+import getCollection from "@/utils/firestore";
+import { Box, Checkbox, TextareaAutosize } from "@mui/material";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
 import {
   ChangeEvent,
-  KeyboardEvent,
   FC,
   FocusEvent,
-  useRef,
+  KeyboardEvent,
   useEffect,
+  useRef,
+  useState,
 } from "react";
 import css from "./listItem.module.scss";
-import { Box, Checkbox, TextareaAutosize } from "@mui/material";
-import TaskType from "@/types/client/board/task";
-import { useBoard } from "@/components/contexts/board";
-import { useSSRFetcher } from "@/components/contexts/ssrFetcher";
-import { IndexPropsType } from "@/types/indexProps";
-import { useSocket } from "@/components/contexts/socket";
-import getAuthCookie from "@/clientlib/getAuthCookie";
-import { randomId } from "@/sharedlib/essentials";
+import { randomId } from "@/utils/randomId";
+import { useFocusedTask } from "@/components/contexts/focusedTask";
+import { useAuth } from "@/components/contexts/auth";
 
 type Props = {
   data?: TaskType;
+  id?: string;
   boardId: string;
 };
 
-const ListItem: FC<Props> = ({ data, boardId }) => {
+const ListItem: FC<Props> = ({ data, id, boardId }) => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const { props, setProps }: IndexPropsType = useSSRFetcher();
-  const { socket } = useSocket();
-  const { createBoard, forcedData, setForcedData } = useBoard();
+  const { user } = useAuth();
+  const { createBoard, forcedData, setForcedData, boardData } = useBoard();
+  const { focusedTask, setFocusedTask } = useFocusedTask();
+
+  const [localTaskText, setLocalTaskText] = useState<string>("");
 
   useEffect(() => {
-    if (data && props.focusedTask == data?.id) {
-      inputRef.current?.focus();
-    }
-  }, [data, data?.id, props.focusedTask]);
+    setLocalTaskText(data?.text ?? "");
+  }, [data]);
 
-  const createNewTask = () => {
+  useEffect(() => {
+    if (data && focusedTask == data?.id) {
+      inputRef.current?.focus();
+      setFocusedTask("");
+    }
+  }, [data, data?.id, focusedTask, setFocusedTask]);
+
+  const createNewTask = async () => {
     if (createBoard) {
       const newForcedData = { ...forcedData };
 
       const newId = randomId();
+
       newForcedData.tasks.push({
         id: newId,
-        ownerid: "",
+        ownerId: user?.uid ?? "",
         checked: false,
         text: "",
-        timecreated: 0,
-        timeupdated: 0,
-        updatedby: "",
-        listorder: "0",
-        lastchecked: undefined,
-        lastcheckedby: undefined,
+        timeCreated: Timestamp.now(),
+        timeUpdated: Timestamp.now(),
+        updatedBy: user?.uid ?? "",
+        listOrder: 0,
       });
 
       setForcedData(newForcedData);
 
-      const newProps = { ...props };
-      newProps.focusedTask = newId;
-      setProps(newProps);
+      setFocusedTask(newId);
     } else {
-      if (!props.boards) return;
+      const newTaskId = randomId();
 
-      socket?.emit("createTask", {
-        auth: getAuthCookie(),
-        boardId,
-      });
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: [
+            ...boardData!.tasks,
+            {
+              id: newTaskId,
+              ownerId: user?.uid,
+              text: "",
+              checked: false,
+              timeCreated: Timestamp.now(),
+              timeUpdated: Timestamp.now(),
+              updatedBy: user?.uid,
+              listOrder: boardData!.tasks.length,
+            },
+          ],
+        },
+        {
+          merge: true,
+        }
+      );
+
+      setFocusedTask(newTaskId);
     }
   };
 
@@ -77,31 +102,37 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     if (createBoard) {
       const newForcedData = { ...forcedData };
       const foundTask = newForcedData.tasks.find(
-        (task) => task.id === data?.id
+        (task: any) => task.id === data?.id
       );
       foundTask && (foundTask.checked = e.target.checked);
       setForcedData(newForcedData);
     } else {
-      const newProps = { ...props };
-
-      if (!newProps.tasks || !data?.id) return;
-
-      const foundTask = newProps.tasks[data?.id];
-      if (!foundTask) return;
-
-      foundTask.checked = e.target.checked;
-
-      setProps(newProps);
-
-      socket?.emit("setTaskChecked", {
-        auth: getAuthCookie(),
-        id: data!.id,
-        checked: e.target.checked,
-      });
+      setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: boardData?.tasks.map((task) => {
+            if (task.id === id) {
+              return {
+                ...task,
+                checked: e.target.checked,
+                updatedBy: user?.uid,
+                timeUpdated: Timestamp.now(),
+                lastChecked: Timestamp.now(),
+                lastCheckedBy: user?.uid,
+              };
+            } else {
+              return task;
+            }
+          }),
+        },
+        {
+          merge: true,
+        }
+      );
     }
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onKeyDown = async (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Disable enter=new task behavior in mobile phones
     if (
       !/Android|iPhone/i.test(navigator.userAgent) &&
@@ -113,61 +144,96 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
     }
 
     if (e.key == "Backspace" && data?.text == "") {
-      deleteTask();
+      const tasks = createBoard ? forcedData.tasks : boardData!.tasks;
 
-      //auto focus previous task
-      const newProps = { ...props };
-      if (createBoard) {
-        if (forcedData.tasks.length > 1) {
-          newProps.focusedTask =
-            forcedData.tasks[forcedData.tasks.length - 2].id;
-          setProps(newProps);
-        }
-      } else {
-        if (!newProps.boards) return;
+      const currentIndex = tasks.findIndex((task) => task.id === id);
+      const currentTask = tasks[currentIndex];
 
-        const foundBoard = newProps.boards[boardId];
-        if (!foundBoard) return;
+      let focusNextTaskId = undefined;
 
-        if (foundBoard.tasks.length > 0) {
-          newProps.focusedTask = foundBoard.tasks[foundBoard.tasks.length - 1];
-          setProps(newProps);
+      if (tasks.length > 1) {
+        if (currentTask.checked) {
+          const checkedTasks = tasks.filter((task) => task.checked);
+          const currentIndexInCheckedTasks = checkedTasks.findIndex(
+            (task) => task.id === id
+          );
+
+          const nextIndex =
+            currentIndexInCheckedTasks == 0
+              ? 1
+              : currentIndexInCheckedTasks - 1;
+
+          const focusNextTask = checkedTasks[nextIndex];
+          focusNextTaskId = tasks.find(
+            (task) => task.id === focusNextTask.id
+          )?.id;
+        } else {
+          const uncheckedTasks = tasks.filter((task) => !task.checked);
+          const currentIndexInUncheckedTasks = uncheckedTasks.findIndex(
+            (task) => task.id === id
+          );
+
+          const nextIndex =
+            currentIndexInUncheckedTasks == 0
+              ? 1
+              : currentIndexInUncheckedTasks - 1;
+
+          const focusNextTask = uncheckedTasks[nextIndex];
+          focusNextTaskId = tasks.find(
+            (task) => task.id === focusNextTask.id
+          )?.id;
         }
       }
+
+      await deleteTask();
+
+      setFocusedTask(focusNextTaskId);
 
       e.preventDefault();
     }
   };
 
-  const onTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const onTextChange = async (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (createBoard) {
-      const newForcedData = { ...forcedData };
-      const foundTask = newForcedData.tasks.find(
-        (task) => task.id === data?.id
-      );
-      foundTask && (foundTask.text = e.target.value);
-      setForcedData(newForcedData);
-    } else {
-      const newProps = { ...props };
-
-      if (!newProps.tasks || !data?.id) return;
-
-      const foundTask = newProps.tasks[data?.id];
-      if (!foundTask) return;
-
-      foundTask.text = e.target.value;
-
-      setProps(newProps);
-
-      socket?.emit("setTaskText", {
-        auth: getAuthCookie(),
-        id: data!.id,
-        text: e.target.value,
+      setForcedData({
+        ...forcedData,
+        tasks: forcedData.tasks.map((task) => {
+          if (task.id === data?.id) {
+            return {
+              ...task,
+              text: e.target.value,
+            };
+          } else {
+            return task;
+          }
+        }),
       });
+    } else {
+      setLocalTaskText(e.target.value);
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: boardData?.tasks.map((task) => {
+            if (task.id === id) {
+              return {
+                ...task,
+                text: e.target.value,
+                updatedBy: user?.uid,
+                timeUpdated: Timestamp.now(),
+              };
+            } else {
+              return task;
+            }
+          }),
+        },
+        {
+          merge: true,
+        }
+      );
     }
   };
 
-  const deleteTask = () => {
+  const deleteTask = async () => {
     if (createBoard) {
       const newForcedData = { ...forcedData };
       newForcedData.tasks = newForcedData.tasks.filter(
@@ -175,22 +241,15 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
       );
       setForcedData(newForcedData);
     } else {
-      const newProps = { ...props };
-
-      if (!newProps.boards || !newProps.tasks || !data?.id) return;
-
-      const foundBoard = newProps.boards[boardId];
-      if (!foundBoard) return;
-
-      foundBoard.tasks = foundBoard.tasks.filter((task) => task !== data?.id);
-      delete newProps.tasks[data.id];
-
-      setProps(newProps);
-
-      socket?.emit("deleteTask", {
-        auth: getAuthCookie(),
-        id: data!.id,
-      });
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          tasks: boardData?.tasks.filter((task) => task.id !== id),
+        },
+        {
+          merge: true,
+        }
+      );
     }
   };
 
@@ -222,13 +281,11 @@ const ListItem: FC<Props> = ({ data, boardId }) => {
       <div className={css.sideItem}>{renderSideItem()}</div>
       <div className={css.text}>
         <TextareaAutosize
-          // autoFocus={
-          //   data != null && (data.ownerid == "" || data.updatedby == props.id)
-          // }
+          key="plsdontupdate"
           ref={inputRef}
           required={data != null}
           placeholder="An awesome task"
-          value={data?.text}
+          value={localTaskText}
           onKeyDown={onKeyDown}
           onChange={onTextChange}
           onBlur={onBlur}
