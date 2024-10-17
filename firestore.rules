@@ -2,34 +2,53 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner
+    function isOwner() {
+      return resource.data.ownerId == request.auth.uid;
+    }
+
+    // Helper function to check if the user is a collaborator (shared access)
+    function isSharedWithUser() {
+      return request.auth.uid in resource.data.shares;
+    }
+
+    // Helper function to prevent updating ownerId unless it stays the same
+    function isOwnerIdUnchanged() {
+      return !('ownerId' in request.resource.data) || 
+             request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    // Helper function to ensure only the owner can modify 'shares' field
+    function canModifyShares() {
+      return !('shares' in request.resource.data) || 
+             resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Rules for "boards" collection
     match /boards/{boardId} {
-      //allow read, write: if request.time < timestamp.date(2024, 11, 14);
-      allow read, update:
-      if request.auth != null && // must be authenticated
-      (
-      resource.data.ownerId == request.auth.uid ||
-      request.auth.uid in resource.data.shares // can only edit boards we are the owner of or if we are shared with them
-      ) &&
-      request.resource.data.ownerId == resource.data.ownerId && // but can't update the ownerId to something it isn't already
-      (
-      !('shares' in request.resource.data) ||        // if 'shares' field is not being modified
-      resource.data.ownerId == request.auth.uid      // if 'shares' is being modified, only the owner can do so
-      );
+      allow read: if isAuthenticated() && (isOwner() || isSharedWithUser());
+
+      allow update:
+        if isAuthenticated() && (isOwner() || isSharedWithUser())
 
       allow delete:
-      if request.auth != null && // must be authenticated
-      resource.data.ownerId == request.auth.uid // can only delete boards we are the owner of
+        if isAuthenticated() && isOwner();
 
       allow create:
-      if request.auth != null && // must be authenticated
-      request.resource.data.ownerId == request.auth.uid // can only create boards we are the owner of
+        if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
     match /users/{userId} {
+      // Allow creating a user document if authenticated and it's for the user themselves
       allow create:
-      if request.auth != null &&
-      userId == request.auth.uid;
+        if isAuthenticated() && userId == request.auth.uid;
 
+      // Allow reading user documents by anyone
       allow read: if true;
     }
   }
