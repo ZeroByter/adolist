@@ -2,6 +2,7 @@
 
 import LayoutContainer from "@/components/layout/container";
 import firebaseAuth from "@/utils/auth";
+import getCollection from "@/utils/firestore";
 import {
   Alert,
   Button,
@@ -13,13 +14,22 @@ import {
   createUserWithEmailAndPassword,
   validatePassword,
 } from "firebase/auth";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import css from "./register.module.scss";
-import { addDoc, doc, setDoc, Timestamp } from "firebase/firestore";
-import getCollection from "@/utils/firestore";
+
+const generateSubstrings = (str: string, minLength = 1) => {
+  const substrings = [];
+  for (let len = minLength; len <= str.length; len++) {
+    for (let i = 0; i <= str.length - len; i++) {
+      substrings.push(str.substring(i, i + len));
+    }
+  }
+  return substrings;
+};
 
 type FormData = {
   email: string;
@@ -54,7 +64,9 @@ const RegisterPage = () => {
 
     await setDoc(doc(getCollection("users"), newUser.user.uid), {
       displayName: data.displayName,
-      searchableName: data.displayName.toLowerCase().split(""),
+      searchableName: [
+        ...new Set(generateSubstrings(data.displayName.toLowerCase())),
+      ],
       timeCreated: Timestamp.now(),
     });
 
@@ -95,12 +107,15 @@ const RegisterPage = () => {
             <Controller
               name="displayName"
               control={control}
-              rules={{ required: true }}
+              rules={{ required: true, maxLength: 32 }}
               render={({ field }) => (
                 <TextField
                   required
                   type="text"
                   label="Display name"
+                  inputProps={{
+                    maxLength: 32,
+                  }}
                   {...field}
                 />
               )}
