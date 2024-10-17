@@ -52,7 +52,7 @@ const RegisterPage = () => {
       data.password
     );
 
-    setDoc(doc(getCollection("users"), newUser.user.uid), {
+    await setDoc(doc(getCollection("users"), newUser.user.uid), {
       displayName: data.displayName,
       searchableName: data.displayName.toLowerCase().split(""),
       timeCreated: Timestamp.now(),
