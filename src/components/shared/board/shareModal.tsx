@@ -79,8 +79,7 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
       const searchQuery = query(
         getCollection("users"),
         where(documentId(), "not-in", notInArray),
-        where("displayNameL", ">=", lowerDebouncedSearch),
-        where("displayNameL", "<=", lowerDebouncedSearch + "\uf8ff"),
+        where("searchableName", "array-contains", lowerDebouncedSearch),
         limit(20)
       );
 

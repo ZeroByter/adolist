@@ -2,7 +2,7 @@ import { Timestamp } from "firebase/firestore";
 
 type UserDataType = {
   displayName: string;
-  displayNameL: string;
+  searchableName: string[];
   timeCreated: Timestamp;
 };
 

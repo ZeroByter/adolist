@@ -54,7 +54,7 @@ const RegisterPage = () => {
 
     setDoc(doc(getCollection("users"), newUser.user.uid), {
       displayName: data.displayName,
-      displayNameL: data.displayName.toLowerCase(),
+      searchableName: data.displayName.toLowerCase().split(""),
       timeCreated: Timestamp.now(),
     });
 
