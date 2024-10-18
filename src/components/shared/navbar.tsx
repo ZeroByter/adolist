@@ -44,6 +44,9 @@ const NavBar: FC = () => {
             <Button color="inherit" onClick={handleLogout}>
               Logout
             </Button>
+            <Link href="/settings">
+              <Button color="inherit">Settings</Button>
+            </Link>
           </Box>
         )}
         {!user && (
@@ -79,6 +82,13 @@ const NavBar: FC = () => {
                 <ListItemText primary="Logout" />
               </ListItemButton>
             </ListItem>
+            <Link href="/settings">
+              <ListItem disablePadding>
+                <ListItemButton sx={{ textAlign: "center" }}>
+                  <ListItemText primary="Settings" />
+                </ListItemButton>
+              </ListItem>
+            </Link>
           </List>
           <Divider />
         </>

@@ -1,14 +1,12 @@
+import BoardType from "@/types/board";
+import TaskType from "@/types/task";
 import UserDataType from "@/types/user";
 import {
   collection,
   CollectionReference,
-  doc,
-  getDoc,
   getFirestore,
 } from "firebase/firestore";
 import firebaseApp from "./firebase";
-import BoardType from "@/types/board";
-import TaskType from "@/types/task";
 
 const firestoreDb = getFirestore(firebaseApp);
 
@@ -32,10 +30,6 @@ const processRawNestedDocumentPath = (documentPath: string, args: any[]) => {
   return result;
 };
 
-const argsToDocumentPath = (args: any[]) => {
-  return args.join("/");
-};
-
 type CollectionsTypesNames = keyof CollectionTypes;
 
 const getCollection = <CName extends CollectionsTypesNames>(
@@ -47,8 +41,6 @@ const getCollection = <CName extends CollectionsTypesNames>(
       nestedDocumentPaths[collectionName] as string,
       nestedPathArgs
     );
-
-    console.log(nestedPath);
 
     return collection(firestoreDb, nestedPath) as CollectionReference<
       CollectionTypes[CName]

@@ -14,6 +14,7 @@ import {
 
 type ContextType = {
   user?: User;
+  userLoaded: boolean;
 };
 
 export const AuthContext = createContext<ContextType>({} as ContextType);
@@ -23,10 +24,12 @@ type Props = {
 };
 
 const AuthContextProvider: FC<Props> = ({ children }) => {
+  const [userLoaded, setUserLoaded] = useState<boolean>(false);
   const [user, setUser] = useState<User>();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(firebaseAuth, (user) => {
+      setUserLoaded(true);
       setUser(user ?? undefined);
     });
 
@@ -34,7 +37,9 @@ const AuthContextProvider: FC<Props> = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, userLoaded }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 

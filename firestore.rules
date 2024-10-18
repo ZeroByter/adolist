@@ -24,6 +24,15 @@ service cloud.firestore {
         request.resource.data.keys().hasAll(requiredFields) &&
         request.resource.data.keys().hasOnly(requiredFields.concat(optionalFields))
     }
+
+    // Helper function to enforce that only required fields are passed
+    function enforceUpdateFields(requiredFields, optionalFields) {
+      let updatedFields = request.resource.data.diff(resource.data).affectedKeys();
+
+      return
+        updatedFields.hasAll(requiredFields) &&
+        updatedFields.hasOnly(requiredFields.concat(optionalFields))
+    }
     
     // Helper function to check if a field is modified
     function isFieldModified(param) {
@@ -83,6 +92,11 @@ service cloud.firestore {
         if enforceUserFields() &&
            isAuthenticated() &&
            userId == request.auth.uid;
+
+      allow update:
+        if enforceUpdateFields(['displayName', 'searchableName'], []) &&
+           isAuthenticated() &&
+           userId == request.auth.uid
 
       // Allow reading user documents by anyone
       allow read: if true;

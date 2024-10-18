@@ -16,9 +16,11 @@ import {
 } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import css from "./login.module.scss";
+import { FirebaseError } from "firebase/app";
+import { useAuth } from "@/components/contexts/auth";
 
 type FormData = {
   email: string;
@@ -30,13 +32,37 @@ const LoginPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>();
-  const router = useRouter();
+  } = useForm<FormData>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
   const [error, setError] = useState("");
 
+  const router = useRouter();
+  const { userLoaded, user } = useAuth();
+
+  useEffect(() => {
+    if (userLoaded && user) {
+      router.push("/");
+    }
+  }, [router, user, userLoaded]);
+
   const onSubmit = handleSubmit(async (data) => {
-    await signInWithEmailAndPassword(firebaseAuth, data.email, data.password);
-    router.push("/");
+    try {
+      setError("");
+      await signInWithEmailAndPassword(firebaseAuth, data.email, data.password);
+      router.push("/");
+    } catch (e) {
+      if (e instanceof FirebaseError) {
+        if (e.code == "auth/invalid-credential") {
+          setError("Invalid login credentials");
+        } else {
+          setError("");
+        }
+      }
+    }
   });
 
   return (

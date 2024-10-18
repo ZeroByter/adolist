@@ -17,19 +17,12 @@ import {
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import css from "./register.module.scss";
-
-const generateSubstrings = (str: string, minLength = 1) => {
-  const substrings = [];
-  for (let len = minLength; len <= str.length; len++) {
-    for (let i = 0; i <= str.length - len; i++) {
-      substrings.push(str.substring(i, i + len));
-    }
-  }
-  return substrings;
-};
+import { FirebaseError } from "firebase/app";
+import { useAuth } from "@/components/contexts/auth";
+import { generateSubstrings } from "@/utils/essentials";
 
 type FormData = {
   email: string;
@@ -38,9 +31,23 @@ type FormData = {
 };
 
 const RegisterPage = () => {
-  const { control, handleSubmit } = useForm<FormData>();
-  const router = useRouter();
+  const { control, handleSubmit } = useForm<FormData>({
+    defaultValues: {
+      email: "",
+      password: "",
+      displayName: "",
+    },
+  });
   const [error, setError] = useState("");
+
+  const router = useRouter();
+  const { userLoaded, user } = useAuth();
+
+  useEffect(() => {
+    if (userLoaded && user) {
+      router.push("/");
+    }
+  }, [router, user, userLoaded]);
 
   const onSubmit = handleSubmit(async (data) => {
     const passwordValidation = await validatePassword(
@@ -56,21 +63,38 @@ const RegisterPage = () => {
       return;
     }
 
-    const newUser = await createUserWithEmailAndPassword(
-      firebaseAuth,
-      data.email,
-      data.password
-    );
+    if (data.displayName.length > 32) {
+      setError("Display name must be under 32 characters");
+      return;
+    }
 
-    await setDoc(doc(getCollection("users"), newUser.user.uid), {
-      displayName: data.displayName,
-      searchableName: [
-        ...new Set(generateSubstrings(data.displayName.toLowerCase())),
-      ],
-      timeCreated: Timestamp.now(),
-    });
+    try {
+      setError("");
 
-    router.push("/");
+      const newUser = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        data.email,
+        data.password
+      );
+
+      await setDoc(doc(getCollection("users"), newUser.user.uid), {
+        displayName: data.displayName,
+        searchableName: [
+          ...new Set(generateSubstrings(data.displayName.toLowerCase())),
+        ],
+        timeCreated: Timestamp.now(),
+      });
+
+      router.push("/");
+    } catch (e) {
+      if (e instanceof FirebaseError) {
+        if (e.code == "auth/email-already-in-use") {
+          setError("Email already taken, please choose another");
+        } else {
+          setError("");
+        }
+      }
+    }
   });
 
   return (

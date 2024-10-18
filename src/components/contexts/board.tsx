@@ -38,7 +38,11 @@ const BoardContextProvider: FC<Props> = ({
   boardData,
   boardId,
 }) => {
-  const formData = useForm<FormData>();
+  const formData = useForm<FormData>({
+    defaultValues: {
+      name: "",
+    },
+  });
 
   const { user } = useAuth();
 

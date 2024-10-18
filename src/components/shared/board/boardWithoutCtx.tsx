@@ -27,7 +27,7 @@ import { ChangeEvent, FC, useEffect, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
 import DeleteModal from "./deleteModal";
 import ShareModal from "./shareModal";
-import { randomId } from "@/utils/randomId";
+import { randomId } from "@/utils/essentials";
 
 export type Props = {
   data?: BoardType;
