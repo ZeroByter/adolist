@@ -4,54 +4,57 @@ import { useAuth } from "@/components/contexts/auth";
 import firebaseAuth from "@/utils/auth";
 import { generateSubstrings } from "@/utils/essentials";
 import getCollection from "@/utils/firestore";
-import { Box, Button, Typography } from "@mui/material";
+import { Alert, Box, Button, FormControl, Typography } from "@mui/material";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-type FormData = {
-  newDisplayName: string;
+const censorString = (input: string) => {
+  const censoredLength = Math.round(input.length / 1.25);
+  const uncensoredParts = input.length - censoredLength;
+
+  return (
+    input.substring(0, uncensoredParts) +
+    "***" +
+    input.substring(input.length - uncensoredParts)
+  );
 };
 
 const RequestPasswordReset: FC = () => {
-  const { user, userLoaded } = useAuth();
+  const { user } = useAuth();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
-    defaultValues: {
-      newDisplayName: "",
-    },
-  });
+  const [success, setSuccess] = useState<string>("");
 
-  const onSubmit = handleSubmit(async (data) => {
-    if (!user) {
-      return;
+  useEffect(() => {
+    if (success != "") {
+      const timeoutId = setTimeout(() => {
+        setSuccess("");
+      }, 6000);
+
+      return () => clearTimeout(timeoutId);
     }
+  }, [success]);
 
-    await setDoc(
-      doc(getCollection("users"), user.uid),
-      {
-        displayName: data.newDisplayName,
-        searchableName: [
-          ...new Set(generateSubstrings(data.newDisplayName.toLowerCase())),
-        ],
-      },
-      {
-        merge: true,
-      }
-    );
-  });
-
-  const handleRequestPassswordRequestLink = () => {
+  const handleRequestPassswordRequestLink = async () => {
     if (!user || !user.email) {
       return;
     }
 
-    sendPasswordResetEmail(firebaseAuth, user.email);
+    await sendPasswordResetEmail(firebaseAuth, user.email);
+
+    const emailAddressMatch = user.email.match(/(.+)(@\w+\.\w+)/);
+    if (emailAddressMatch != null) {
+      console.log(emailAddressMatch);
+
+      setSuccess(
+        `Successfully sent password request link to ${censorString(
+          emailAddressMatch[1]
+        )}${emailAddressMatch[2]}`
+      );
+    } else {
+      setSuccess(`Successfully sent password request link`);
+    }
   };
 
   return (
@@ -62,6 +65,11 @@ const RequestPasswordReset: FC = () => {
       <Button variant="contained" onClick={handleRequestPassswordRequestLink}>
         Request password reset
       </Button>
+      {success && (
+        <FormControl fullWidth margin="dense">
+          <Alert severity="success">{success}</Alert>
+        </FormControl>
+      )}
     </Box>
   );
 };

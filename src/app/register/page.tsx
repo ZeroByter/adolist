@@ -1,15 +1,22 @@
 "use client";
 
+import { useAuth } from "@/components/contexts/auth";
 import LayoutContainer from "@/components/layout/container";
 import firebaseAuth from "@/utils/auth";
+import { generateSubstrings } from "@/utils/essentials";
 import getCollection from "@/utils/firestore";
 import {
   Alert,
   Button,
+  Container,
   FormControl,
+  Grid,
+  Paper,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { FirebaseError } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   validatePassword,
@@ -19,10 +26,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import css from "./register.module.scss";
-import { FirebaseError } from "firebase/app";
-import { useAuth } from "@/components/contexts/auth";
-import { generateSubstrings } from "@/utils/essentials";
 
 type FormData = {
   email: string;
@@ -98,73 +101,77 @@ const RegisterPage = () => {
   });
 
   return (
-    <>
-      <LayoutContainer className={css.root}>
-        <Typography>Register</Typography>
-        <form onSubmit={onSubmit}>
-          <FormControl required fullWidth margin="normal">
-            <Controller
-              name="email"
-              control={control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <TextField required type="email" label="Email" {...field} />
-              )}
-            />
-          </FormControl>
-          <FormControl required fullWidth margin="normal">
-            <Controller
-              name="password"
-              control={control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <TextField
-                  required
-                  type="password"
-                  label="Password"
-                  {...field}
+    <Container style={{ marginTop: "20px" }}>
+      <Grid container justifyContent="center">
+        <Grid item xs={12} lg={6}>
+          <Paper variant="outlined" sx={{ width: "100%", p: 1 }}>
+            <form onSubmit={onSubmit}>
+              <Typography sx={{ fontSize: 18 }}>Register</Typography>
+              <FormControl required fullWidth margin="dense">
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <TextField required type="email" label="Email" {...field} />
+                  )}
                 />
-              )}
-            />
-          </FormControl>
-          <FormControl required fullWidth margin="normal">
-            <Controller
-              name="displayName"
-              control={control}
-              rules={{ required: true, maxLength: 32 }}
-              render={({ field }) => (
-                <TextField
-                  required
-                  type="text"
-                  label="Display name"
-                  inputProps={{
-                    maxLength: 32,
-                  }}
-                  {...field}
+              </FormControl>
+              <FormControl required fullWidth margin="dense">
+                <Controller
+                  name="password"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <TextField
+                      required
+                      type="password"
+                      label="Password"
+                      {...field}
+                    />
+                  )}
                 />
+              </FormControl>
+              <FormControl required fullWidth margin="dense">
+                <Controller
+                  name="displayName"
+                  control={control}
+                  rules={{ required: true, maxLength: 32 }}
+                  render={({ field }) => (
+                    <TextField
+                      required
+                      type="text"
+                      label="Display name"
+                      inputProps={{
+                        maxLength: 32,
+                      }}
+                      {...field}
+                    />
+                  )}
+                />
+              </FormControl>
+              <FormControl fullWidth margin="dense">
+                <Stack gap={1} direction="row">
+                  <Button type="submit" variant="contained" color="success">
+                    Register
+                  </Button>
+                  <Link href="/login">
+                    <Button type="button" variant="contained">
+                      Login
+                    </Button>
+                  </Link>
+                </Stack>
+              </FormControl>
+              {error && (
+                <FormControl fullWidth margin="dense">
+                  <Alert severity="error">{error}</Alert>
+                </FormControl>
               )}
-            />
-          </FormControl>
-          {error && (
-            <FormControl fullWidth margin="normal">
-              <Alert severity="error">{error}</Alert>
-            </FormControl>
-          )}
-          <FormControl fullWidth margin="normal">
-            <div className={css.buttons}>
-              <Button type="submit" variant="contained" color="success">
-                Register
-              </Button>
-              <Link href="/login">
-                <Button type="button" variant="contained">
-                  Login
-                </Button>
-              </Link>
-            </div>
-          </FormControl>
-        </form>
-      </LayoutContainer>
-    </>
+            </form>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 

@@ -4,6 +4,7 @@ import { useAuth } from "@/components/contexts/auth";
 import { generateSubstrings } from "@/utils/essentials";
 import getCollection from "@/utils/firestore";
 import {
+  Alert,
   Box,
   Button,
   FormControl,
@@ -12,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { doc, setDoc } from "firebase/firestore";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 type FormData = {
@@ -20,7 +21,9 @@ type FormData = {
 };
 
 const ChangeDisplayName: FC = () => {
-  const { user, userLoaded } = useAuth();
+  const { user } = useAuth();
+
+  const [success, setSuccess] = useState<string>("");
 
   const {
     control,
@@ -31,6 +34,16 @@ const ChangeDisplayName: FC = () => {
       newDisplayName: "",
     },
   });
+
+  useEffect(() => {
+    if (success != "") {
+      const timeoutId = setTimeout(() => {
+        setSuccess("");
+      }, 6000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [success]);
 
   const onSubmit = handleSubmit(async (data) => {
     if (!user) {
@@ -49,13 +62,15 @@ const ChangeDisplayName: FC = () => {
         merge: true,
       }
     );
+
+    setSuccess("Successfully updated display name");
   });
 
   return (
     <Box sx={{ p: 1 }}>
-      <Stack spacing={1} alignItems="flex-start">
-        <Typography sx={{ fontSize: 17 }}>Change display name</Typography>
-        <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit}>
+        <Stack spacing={1} alignItems="flex-start">
+          <Typography sx={{ fontSize: 17 }}>Change display name</Typography>
           <FormControl required fullWidth>
             <Controller
               name="newDisplayName"
@@ -73,11 +88,16 @@ const ChangeDisplayName: FC = () => {
           </FormControl>
           <FormControl margin="dense">
             <Button type="submit" variant="contained">
-              Register
+              Change
             </Button>
           </FormControl>
-        </form>
-      </Stack>
+          {success && (
+            <FormControl fullWidth margin="dense">
+              <Alert severity="success">{success}</Alert>
+            </FormControl>
+          )}
+        </Stack>
+      </form>
     </Box>
   );
 };
