@@ -101,5 +101,9 @@ service cloud.firestore {
       // Allow reading user documents by anyone
       allow read: if true;
     }
+    
+    match /users/{userId}/settings/{settingsPage} {
+    	allow read, write: if true;
+    }
   }
 }

@@ -7,17 +7,19 @@ import {
   getFirestore,
 } from "firebase/firestore";
 import firebaseApp from "./firebase";
+import UserSettingsType from "@/types/userSettings";
 
 const firestoreDb = getFirestore(firebaseApp);
 
 type CollectionTypes = {
   users: UserDataType;
+  userSettings: UserSettingsType;
   boards: BoardType;
   tasks: TaskType;
 };
 
 const nestedDocumentPaths: { [key in keyof CollectionTypes]?: string } = {
-  tasks: "boards/$/tasks",
+  userSettings: "users/$/settings",
 };
 
 const processRawNestedDocumentPath = (documentPath: string, args: any[]) => {

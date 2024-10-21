@@ -26,7 +26,7 @@ type Props = {
 const ListItem: FC<Props> = ({ data, id, boardId }) => {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const { user } = useAuth();
+  const { user, userSettings } = useAuth();
   const { createBoard, forcedData, setForcedData, boardData } = useBoard();
   const { focusedTask, setFocusedTask } = useFocusedTask();
 
@@ -98,7 +98,7 @@ const ListItem: FC<Props> = ({ data, id, boardId }) => {
     createNewTask();
   };
 
-  const onCheckedChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const onCheckedChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (createBoard) {
       const newForcedData = { ...forcedData };
       const foundTask = newForcedData.tasks.find(
@@ -107,7 +107,12 @@ const ListItem: FC<Props> = ({ data, id, boardId }) => {
       foundTask && (foundTask.checked = e.target.checked);
       setForcedData(newForcedData);
     } else {
-      setDoc(
+      if (userSettings?.soundOnTaskCheck && e.target.checked) {
+        const checkSfx = new Audio("/audio/super-mario-coin.mp3");
+        checkSfx.play();
+      }
+
+      await setDoc(
         doc(getCollection("boards"), boardId),
         {
           tasks: boardData?.tasks.map((task) => {

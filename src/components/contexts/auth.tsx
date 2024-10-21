@@ -1,8 +1,12 @@
 "use client";
 
+import { PERSONAL_SETTINGS_KEY } from "@/constants";
+import UserSettingsType from "@/types/userSettings";
 import firebaseAuth from "@/utils/auth";
 import firebaseApp from "@/utils/firebase";
+import getCollection from "@/utils/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import {
   createContext,
   useContext,
@@ -13,8 +17,9 @@ import {
 } from "react";
 
 type ContextType = {
-  user?: User;
   userLoaded: boolean;
+  user?: User;
+  userSettings?: UserSettingsType;
 };
 
 export const AuthContext = createContext<ContextType>({} as ContextType);
@@ -25,7 +30,9 @@ type Props = {
 
 const AuthContextProvider: FC<Props> = ({ children }) => {
   const [userLoaded, setUserLoaded] = useState<boolean>(false);
+
   const [user, setUser] = useState<User>();
+  const [userSettings, setUserSettings] = useState<UserSettingsType>();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(firebaseAuth, (user) => {
@@ -33,11 +40,30 @@ const AuthContextProvider: FC<Props> = ({ children }) => {
       setUser(user ?? undefined);
     });
 
-    return () => unsub();
+    return unsub;
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      if (user) {
+        const unsub = onSnapshot(
+          doc(getCollection("userSettings", user.uid), PERSONAL_SETTINGS_KEY),
+          (snapshot) => {
+            const data = snapshot.data();
+
+            if (data) {
+              setUserSettings(data);
+            }
+          }
+        );
+
+        return unsub;
+      }
+    })();
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, userLoaded }}>
+    <AuthContext.Provider value={{ userLoaded, user, userSettings }}>
       {children}
     </AuthContext.Provider>
   );

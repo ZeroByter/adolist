@@ -13,6 +13,7 @@ import { NextPage } from "next";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import ChangeDisplayName from "./sections/changeDisplayName";
+import PersonalSettings from "./sections/personalSettings";
 import RequestPasswordReset from "./sections/requestPasswordReset";
 
 const SettingsPage: NextPage = () => {
@@ -33,6 +34,8 @@ const SettingsPage: NextPage = () => {
             <Box sx={{ p: 1 }}>
               <Typography sx={{ fontSize: 20 }}>User Settings</Typography>
             </Box>
+            <Divider />
+            <PersonalSettings />
             <Divider />
             <ChangeDisplayName />
             <Divider />
