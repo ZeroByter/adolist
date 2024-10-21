@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FirebaseError } from "firebase/app";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, validatePassword } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,6 +48,19 @@ const LoginPage = () => {
   }, [router, user, userLoaded]);
 
   const onSubmit = handleSubmit(async (data) => {
+    const passwordValidation = await validatePassword(
+      firebaseAuth,
+      data.password
+    );
+    if (!passwordValidation.isValid) {
+      if (passwordValidation.meetsMinPasswordLength !== true) {
+        setError(
+          `Password is too short (must be atleast ${passwordValidation.passwordPolicy.customStrengthOptions.minPasswordLength} characters)`
+        );
+      }
+      return;
+    }
+
     try {
       setError("");
       await signInWithEmailAndPassword(firebaseAuth, data.email, data.password);
