@@ -103,7 +103,20 @@ service cloud.firestore {
     }
     
     match /users/{userId}/settings/{settingsPage} {
-    	allow read, write: if true;
+      function enforceUserSettingsFields() {
+        return enforceRequestFields(['soundOnTaskCheck'], [])
+      }
+
+      allow read:
+        if settingsPage == "personalSettings" &&
+           isAuthenticated() &&
+           userId == request.auth.uid
+
+      allow write:
+        if enforceUserSettingsFields() &&
+           settingsPage == "personalSettings" &&
+           isAuthenticated() &&
+           userId == request.auth.uid
     }
   }
 }
