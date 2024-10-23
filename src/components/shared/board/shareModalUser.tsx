@@ -17,7 +17,8 @@ type Props = {
 };
 
 const ShareModalUser: FC<Props> = ({ userId }) => {
-  const { boardData, boardId } = useBoard();
+  const { boardData, boardId, forcedData, setForcedData, createBoard } =
+    useBoard();
 
   const [displayName, setDisplayName] = useState<string>();
 
@@ -29,17 +30,26 @@ const ShareModalUser: FC<Props> = ({ userId }) => {
   }, [userId]);
 
   const onRemoveUser = async (userId: string) => {
-    await setDoc(
-      doc(getCollection("boards"), boardId),
-      {
-        shares: boardData?.shares.filter(
+    if (createBoard) {
+      setForcedData({
+        ...forcedData,
+        shares: forcedData.shares.filter(
           (shareUserId) => shareUserId !== userId
         ),
-      },
-      {
-        merge: true,
-      }
-    );
+      });
+    } else {
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          shares: boardData?.shares.filter(
+            (shareUserId) => shareUserId !== userId
+          ),
+        },
+        {
+          merge: true,
+        }
+      );
+    }
   };
 
   return (

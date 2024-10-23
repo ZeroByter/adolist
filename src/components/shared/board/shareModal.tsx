@@ -43,7 +43,7 @@ type Props = {
 
 const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
   const { user } = useAuth();
-  const { boardData } = useBoard();
+  const { boardData, forcedData, setForcedData, createBoard } = useBoard();
 
   const initialLoadsRef = useRef<number>(0);
 
@@ -64,7 +64,7 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
         return;
       }
 
-      if (debouncedSearch == "") {
+      if (search == "" || debouncedSearch == "") {
         setSearchedUsers([]);
         return;
       }
@@ -72,8 +72,14 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
       const lowerDebouncedSearch = debouncedSearch.toLowerCase();
       let notInArray = [user!.uid];
 
-      if (boardData!.shares.length > 0) {
-        notInArray = [...notInArray, ...boardData!.shares];
+      if (createBoard) {
+        if (forcedData.shares.length > 0) {
+          notInArray = [...notInArray, ...forcedData.shares];
+        }
+      } else {
+        if (boardData!.shares.length > 0) {
+          notInArray = [...notInArray, ...boardData!.shares];
+        }
       }
 
       const searchQuery = query(
@@ -86,21 +92,36 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
       const results = await getDocs(searchQuery);
       setSearchedUsers(results.docs);
     })();
-  }, [boardData, boardId, debouncedSearch, user]);
+  }, [
+    boardData,
+    boardId,
+    createBoard,
+    debouncedSearch,
+    forcedData.shares,
+    search,
+    user,
+  ]);
 
   const onAddUser = async (userId: string) => {
     setSearch("");
     setSearchedUsers([]);
 
-    await setDoc(
-      doc(getCollection("boards"), boardId),
-      {
-        shares: [...boardData!.shares, userId],
-      },
-      {
-        merge: true,
-      }
-    );
+    if (createBoard) {
+      setForcedData({
+        ...forcedData,
+        shares: [...forcedData.shares, userId],
+      });
+    } else {
+      await setDoc(
+        doc(getCollection("boards"), boardId),
+        {
+          shares: [...boardData!.shares, userId],
+        },
+        {
+          merge: true,
+        }
+      );
+    }
   };
 
   const renderSearchedUsers = searchedUsers.map((user) => {
@@ -122,7 +143,9 @@ const ShareModal: FC<Props> = ({ open, onClose, boardId }) => {
     );
   });
 
-  const renderSharedUsers = boardData?.shares.map((userId) => (
+  const useRenderUsers = createBoard ? forcedData.shares : boardData!.shares;
+
+  const renderSharedUsers = useRenderUsers.map((userId) => (
     <ShareModalUser key={userId} userId={userId} />
   ));
 

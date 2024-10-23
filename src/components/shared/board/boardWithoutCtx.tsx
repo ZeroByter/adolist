@@ -22,7 +22,7 @@ import {
   TextareaAutosize,
   Typography,
 } from "@mui/material";
-import { addDoc, doc, setDoc } from "firebase/firestore";
+import { addDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { ChangeEvent, FC, useEffect, useState } from "react";
 import css from "./boardWithoutCtx.module.scss";
 import DeleteModal from "./deleteModal";
@@ -45,6 +45,8 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [localBoardName, setLocalBoardName] = useState<string>("");
+
+  const [ownerDisplayName, setOwnerDisplayName] = useState<string>("");
 
   const onSubmit = handleSubmit(async (data) => {
     //dont use data because we are dealing with a dynamic form and i cant be bothered to figure out how to make react-form-hook work with a dynamic number of inputs
@@ -92,6 +94,22 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
   const useData = isUsingForcedData ? forcedData : data;
 
   useEffect(() => {
+    (async () => {
+      if (useData != null && !createBoard && useData.ownerId !== user?.uid) {
+        const snapshot = await getDoc(
+          doc(getCollection("users"), useData.ownerId)
+        );
+
+        const data = snapshot.data();
+
+        if (data != null) {
+          setOwnerDisplayName(data.displayName);
+        }
+      }
+    })();
+  }, [createBoard, useData, user?.uid]);
+
+  useEffect(() => {
     setLocalBoardName(useData?.name ?? "");
   }, [useData]);
 
@@ -115,6 +133,23 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
         </IconButton>
       </>
     );
+  };
+
+  const renderNonOwnerInfo = () => {
+    if (useData != null && !createBoard && useData.ownerId !== user?.uid) {
+      const renderDisplayName = ownerDisplayName || useData?.ownerId;
+
+      return (
+        <Typography
+          fontSize={12}
+          color={"gray"}
+          lineHeight={"normal"}
+          title={renderDisplayName}
+        >
+          Owner: {renderDisplayName}
+        </Typography>
+      );
+    }
   };
 
   let hasCheckedItem = false;
@@ -145,6 +180,7 @@ const BoardWithoutCtx: FC<Props> = ({ data, id }) => {
                 value={localBoardName}
                 onChange={onNameChange}
               />
+              {renderNonOwnerInfo()}
               {renderOwnerButtons()}
             </div>
             <div>
